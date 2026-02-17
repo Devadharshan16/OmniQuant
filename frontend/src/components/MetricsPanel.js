@@ -1,6 +1,6 @@
 import React from 'react';
 
-function MetricsPanel({ metrics }) {
+function MetricsPanel({ metrics, userScanCount }) {
   if (!metrics) {
     return (
       <div className="lg:col-span-3">
@@ -19,9 +19,9 @@ function MetricsPanel({ metrics }) {
       <div className="metric-card">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-gray-400 text-sm">Total Scans</div>
+            <div className="text-gray-400 text-sm">Your Scans</div>
             <div className="text-3xl font-bold text-cyan-400 mt-1">
-              {systemMetrics.total_scans || 0}
+              {userScanCount || 0}
             </div>
           </div>
           <div className="text-4xl">🔍</div>

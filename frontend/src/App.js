@@ -12,6 +12,10 @@ function App() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [userScanCount, setUserScanCount] = useState(() => {
+    // Load user's personal scan count from localStorage
+    return parseInt(localStorage.getItem('omniquant_scan_count') || '0', 10);
+  });
 
   useEffect(() => {
     fetchMetrics();
@@ -19,6 +23,16 @@ function App() {
     const interval = setInterval(fetchMetrics, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    // Auto-refresh opportunities every 60 seconds if we have any
+    if (opportunities.length > 0) {
+      const interval = setInterval(() => {
+        handleScan(true); // silent refresh (no loading state)
+      }, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [opportunities.length]);
 
   const fetchMetrics = async () => {
     try {
@@ -32,14 +46,23 @@ function App() {
     }
   };
 
-  const handleScan = async () => {
-    setLoading(true);
-    setError(null);
+  const handleScan = async (silentRefresh = false) => {
+    if (!silentRefresh) {
+      setLoading(true);
+      setError(null);
+      
+      // Increment user's personal scan count
+      const newCount = userScanCount + 1;
+      setUserScanCount(newCount);
+      localStorage.setItem('omniquant_scan_count', newCount.toString());
+    }
     
     try {
       // Always use simulated data (fast and reliable)
       const apiUrl = `${API_ENDPOINTS.QUICK_SCAN}?use_real_data=false`;
-      console.log('Scanning with API:', apiUrl);
+      if (!silentRefresh) {
+        console.log('Scanning with API:', apiUrl);
+      }
       
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -54,19 +77,29 @@ function App() {
       }
 
       const data = await response.json();
-      console.log('Scan response:', data);
+      if (!silentRefresh) {
+        console.log('Scan response:', data);
+      }
       
       if (data.success) {
         setOpportunities(data.opportunities || []);
-        await fetchMetrics();
+        if (!silentRefresh) {
+          await fetchMetrics();
+        }
       } else {
-        setError(data.error || 'Scan failed');
+        if (!silentRefresh) {
+          setError(data.error || 'Scan failed');
+        }
       }
     } catch (err) {
       console.error('Scan error:', err);
-      setError(`Failed to scan: ${err.message}. Check if backend is running at ${API_ENDPOINTS.ROOT}`);
+      if (!silentRefresh) {
+        setError(`Failed to scan: ${err.message}. Check if backend is running at ${API_ENDPOINTS.ROOT}`);
+      }
     } finally {
-      setLoading(false);
+      if (!silentRefresh) {
+        setLoading(false);
+      }
     }
   };
 
@@ -112,7 +145,7 @@ function App() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <MetricsPanel metrics={metrics} />
+          <MetricsPanel metrics={metrics} userScanCount={userScanCount} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
