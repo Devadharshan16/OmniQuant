@@ -54,6 +54,20 @@ services:
         name: Cache-Control
         value: public, max-age=3600
     routes:
+      # Serve PWA files directly (don't rewrite to index.html)
+      - type: rewrite
+        source: /service-worker.js
+        destination: /service-worker.js
+      - type: rewrite
+        source: /manifest.json
+        destination: /manifest.json
+      - type: rewrite
+        source: /icon-*.png
+        destination: /icon-:splat.png
+      - type: rewrite
+        source: /icon.svg
+        destination: /icon.svg
+      # Rewrite all other routes to index.html for React Router
       - type: rewrite
         source: /*
         destination: /index.html

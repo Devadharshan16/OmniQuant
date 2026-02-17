@@ -4,6 +4,7 @@ import OpportunityList from './components/OpportunityList';
 import RiskPanel from './components/RiskPanel';
 import MetricsPanel from './components/MetricsPanel';
 import ConnectionStatus from './components/ConnectionStatus';
+import PWADebug from './components/PWADebug';
 import { API_ENDPOINTS } from './config';
 
 function App() {
@@ -24,20 +25,36 @@ function App() {
   // PWA Install Prompt
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
+      console.log('[PWA] beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallButton(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Hide button if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    const handleAppInstalled = () => {
+      console.log('[PWA] App was installed');
       setShowInstallButton(false);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('[PWA] Already running as installed app');
+      setShowInstallButton(false);
+    }
+
+    // Debug: Check PWA requirements
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        console.log('[PWA] Service Worker registrations:', registrations.length);
+      });
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -235,6 +252,8 @@ function App() {
           </div>
         </div>
       </main>
+
+      <PWADebug />
     </div>
   );
 }
