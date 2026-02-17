@@ -248,6 +248,49 @@ Simulated market shocks:
 
 ---
 
+## 🌐 Deployment
+
+### Deploy to Render (Free Hosting)
+
+OmniQuant can be deployed to Render's free tier in minutes:
+
+```powershell
+# 1. Push to GitHub
+git add .
+git commit -m "Deploy OmniQuant"
+git push origin main
+
+# 2. Connect to Render
+# Go to https://dashboard.render.com
+# Click "New+" → "Blueprint"
+# Select your repository
+# Render auto-deploys using render.yaml
+
+# 3. Your app is live!
+# Frontend: https://omniquant-frontend.onrender.com
+# Backend: https://omniquant-api.onrender.com
+```
+
+**📖 Full deployment guide**: [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md)
+
+**Features on Free Tier:**
+- ✅ Auto-deploy on git push
+- ✅ HTTPS included
+- ✅ 750 hours/month backend uptime
+- ✅ Unlimited frontend hosting
+- ✅ Custom domains supported
+
+**Quick Scripts:**
+```powershell
+# Prepare for deployment
+./deploy-render.ps1
+
+# Test deployed API
+./test-api.ps1 -ApiUrl "https://your-api.onrender.com"
+```
+
+---
+
 ## 📄 License
 
 MIT License - See [LICENSE](LICENSE) for details

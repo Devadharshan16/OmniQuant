@@ -11,10 +11,22 @@ from typing import List, Dict, Any, Optional
 import uvicorn
 import numpy as np
 import time
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Import OmniQuant modules
 import sys
 sys.path.append('..')
+
+# Environment configuration
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
+DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
+PORT = int(os.getenv('PORT', 8000))
+CORS_ORIGINS = os.getenv('CORS_ORIGINS', '*').split(',')
+USE_REAL_DATA = os.getenv('USE_REAL_DATA', 'false').lower() == 'true'
 
 from simulation.order_book import OrderBookSimulator
 from simulation.slippage_model import AdvancedSlippageModel
@@ -99,13 +111,15 @@ class AllocationRequest(BaseModel):
 app = FastAPI(
     title="OmniQuant v2",
     description="Quantitative Market Inefficiency Research Platform",
-    version="2.0.0"
+    version="2.0.0",
+    docs_url="/docs" if DEBUG else None,  # Disable docs in production
+    redoc_url="/redoc" if DEBUG else None
 )
 
-# CORS middleware
+# CORS middleware - configure based on environment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS if CORS_ORIGINS != ['*'] else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

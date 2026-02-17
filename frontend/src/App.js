@@ -4,6 +4,7 @@ import OpportunityList from './components/OpportunityList';
 import RiskPanel from './components/RiskPanel';
 import MetricsPanel from './components/MetricsPanel';
 import DisclaimerBanner from './components/DisclaimerBanner';
+import { API_ENDPOINTS } from './config';
 
 function App() {
   const [opportunities, setOpportunities] = useState([]);
@@ -22,7 +23,7 @@ function App() {
 
   const fetchMetrics = async () => {
     try {
-      const response = await fetch('http://localhost:8000/metrics');
+      const response = await fetch(API_ENDPOINTS.METRICS);
       const data = await response.json();
       if (data.success) {
         setMetrics(data);
@@ -39,7 +40,7 @@ function App() {
     try {
       // Use new quick_scan endpoint that handles data generation
       const response = await fetch(
-        `http://localhost:8000/quick_scan?use_real_data=${useRealData}`,
+        `${API_ENDPOINTS.QUICK_SCAN}?use_real_data=${useRealData}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
