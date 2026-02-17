@@ -17,83 +17,136 @@ function App() {
     return parseInt(localStorage.getItem('omniquant_scan_count') || '0', 10);
   });
   const [hasScanned, setHasScanned] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [hasNativePrompt, setHasNativePrompt] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [showMobileBanner, setShowMobileBanner] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const timerRef = useRef(null);
   const refreshRef = useRef(null);
 
   // PWA Install Prompt
   useEffect(() => {
-    // Check if already installed
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || 
+    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
                       window.navigator.standalone === true;
     setIsStandalone(standalone);
-    
+
     if (standalone) {
       console.log('[PWA] Already running as installed app');
       return;
     }
 
-    const handleBeforeInstallPrompt = (e) => {
-      console.log('[PWA] beforeinstallprompt event fired - native prompt available!');
-      e.preventDefault();
-      setDeferredPrompt(e);
+    // Check if the early capture in index.js already got the prompt
+    if (window.__deferredPrompt) {
+      console.log('[PWA] Found early-captured install prompt!');
+      setHasNativePrompt(true);
+    }
+
+    // Listen for future prompt captures (custom event from index.js)
+    const handlePromptCaptured = () => {
+      console.log('[PWA] Prompt captured event received');
+      setHasNativePrompt(true);
     };
 
     const handleAppInstalled = () => {
       console.log('[PWA] App was installed successfully!');
       setIsStandalone(true);
+      setShowMobileBanner(false);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
+    // Also listen for the native event as backup
+    const handleBeforeInstallPrompt = (e) => {
+      console.log('[PWA] beforeinstallprompt in React - captured!');
+      e.preventDefault();
+      window.__deferredPrompt = e;
+      window.__promptCaptured = true;
+      setHasNativePrompt(true);
+    };
 
-    // Debug: Check PWA requirements
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        console.log('[PWA] Service Worker registrations:', registrations.length);
-      });
+    window.addEventListener('pwa-prompt-captured', handlePromptCaptured);
+    window.addEventListener('pwa-app-installed', handleAppInstalled);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Show mobile install banner after 3 seconds on mobile devices
+    const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    let mobileTimer;
+    if (isMobile && !bannerDismissed) {
+      mobileTimer = setTimeout(() => {
+        if (!window.matchMedia('(display-mode: standalone)').matches) {
+          setShowMobileBanner(true);
+        }
+      }, 3000);
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      if (mobileTimer) clearTimeout(mobileTimer);
+      window.removeEventListener('pwa-prompt-captured', handlePromptCaptured);
+      window.removeEventListener('pwa-app-installed', handleAppInstalled);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [bannerDismissed]);
 
   const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      // Native install prompt is available - use it!
+    // Always re-check for the early-captured prompt
+    const prompt = window.__deferredPrompt;
+
+    if (prompt) {
       console.log('[PWA] Triggering native install prompt');
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`[PWA] User ${outcome === 'accepted' ? 'accepted' : 'dismissed'} install`);
-      
-      if (outcome === 'accepted') {
-        setIsStandalone(true);
+      try {
+        prompt.prompt();
+        const { outcome } = await prompt.userChoice;
+        console.log('[PWA] User ' + (outcome === 'accepted' ? 'accepted' : 'dismissed') + ' install');
+        if (outcome === 'accepted') {
+          setIsStandalone(true);
+          setShowMobileBanner(false);
+        }
+      } catch (err) {
+        console.log('[PWA] Prompt error:', err);
       }
-      setDeferredPrompt(null);
+      window.__deferredPrompt = null;
+      setHasNativePrompt(false);
     } else {
-      // Fallback: show browser-specific instructions
+      // No native prompt - guide user to browser's built-in install
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       const isAndroid = /Android/.test(navigator.userAgent);
-      
-      let message = 'To install this app:\n\n';
-      
+      const isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
+      const isEdge = /Edg/.test(navigator.userAgent);
+      const isSamsung = /SamsungBrowser/.test(navigator.userAgent);
+
+      let message = 'To install OmniQuant as an app:\n\n';
+
       if (isIOS) {
-        message += '1. Tap the Share button (square with arrow)\n';
+        message += '1. Tap the Share button at the bottom (square with arrow up)\n';
         message += '2. Scroll down and tap "Add to Home Screen"\n';
-        message += '3. Tap "Add" in the top right';
+        message += '3. Tap "Add" in the top right\n\n';
+        message += 'The app will appear on your home screen!';
+      } else if (isAndroid && isSamsung) {
+        message += '1. Tap the menu icon in the bottom right\n';
+        message += '2. Tap "Add page to" then "Home screen"\n';
+        message += '3. Tap "Add"';
       } else if (isAndroid) {
-        message += '1. Tap the menu (⋮) in the top right\n';
-        message += '2. Tap "Add to Home screen" or "Install app"\n';
-        message += '3. Tap "Install" or "Add"';
+        message += '1. Tap the three-dot menu in the top right\n';
+        message += '2. Look for "Install app" or "Add to Home screen"\n';
+        message += '3. Tap "Install"\n\n';
+        message += 'If you don\'t see "Install app", try:\n';
+        message += '- Refreshing the page first\n';
+        message += '- Waiting 30 seconds then checking the menu again\n';
+        message += '- Chrome needs you to browse the site briefly before offering install';
+      } else if (isEdge) {
+        message += '1. Look for the app install icon in the address bar\n';
+        message += '2. Or click ... menu > Apps > Install this site as an app\n';
+        message += '3. Click "Install"';
+      } else if (isChrome) {
+        message += '1. Look for the install icon in the address bar (right side)\n';
+        message += '2. Or click ... menu > "Install OmniQuant..."\n';
+        message += '3. Click "Install" in the dialog\n\n';
+        message += 'If you don\'t see it, try refreshing and waiting a moment.';
       } else {
-        message += '• Chrome: Click the install icon (⊕) in the address bar\n';
-        message += '• Edge: Click the app icon in the address bar\n';
-        message += '• Or use browser menu → "Install OmniQuant"';
+        message += '1. Look for an install option in your browser\'s menu\n';
+        message += '2. Or check the address bar for an install icon';
       }
-      
+
       alert(message);
     }
   };
@@ -133,19 +186,16 @@ function App() {
 
   // Manual scan with full loading UI
   const doScan = async () => {
-    // START LOADING
     setLoading(true);
     setError(null);
     setLoadingTime(0);
 
-    // Start timer
     let seconds = 0;
     timerRef.current = setInterval(() => {
       seconds += 1;
       setLoadingTime(seconds);
     }, 1000);
 
-    // Update scan count
     const newCount = scanCount + 1;
     setScanCount(newCount);
     localStorage.setItem('omniquant_scan_count', String(newCount));
@@ -168,7 +218,6 @@ function App() {
     } catch (err) {
       setError(`Failed to scan: ${err.message}`);
     } finally {
-      // STOP LOADING
       clearInterval(timerRef.current);
       setLoading(false);
     }
@@ -176,50 +225,55 @@ function App() {
 
   return (
     <div className="App min-h-screen bg-gray-900 text-gray-100">
-      
+
       <header className="bg-gray-800 shadow-lg border-b border-cyan-500">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-4xl font-bold text-cyan-400">
+            <div className="min-w-0 flex-shrink">
+              <h1 className="text-3xl sm:text-4xl font-bold text-cyan-400">
                 OmniQuant <span className="text-gray-400">v2</span>
               </h1>
-              <p className="text-gray-400 mt-1">
+              <p className="text-gray-400 mt-1 text-sm sm:text-base truncate">
                 Quantitative Market Inefficiency Research Platform
               </p>
               <ConnectionStatus />
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
-              {/* Show install button if not running as standalone app and not on localhost */}
-              {!isStandalone && window.location.hostname !== 'localhost' && (
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-2">
+              {/* Install button - always visible when not standalone */}
+              {!isStandalone && (
                 <button
                   onClick={handleInstallClick}
-                  className="px-3 sm:px-4 py-2 rounded-lg font-semibold bg-green-600 hover:bg-green-700 shadow-lg transition-all flex items-center gap-2 text-xs sm:text-sm"
+                  className={`px-3 sm:px-4 py-2 rounded-lg font-semibold shadow-lg transition-all flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm whitespace-nowrap ${
+                    hasNativePrompt
+                      ? 'bg-green-500 hover:bg-green-600 animate-pulse'
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
                   title="Install OmniQuant as an app"
                 >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  <span className="hidden sm:inline">Install App</span>
-                  <span className="sm:hidden">Install</span>
+                  <span className="hidden sm:inline">{hasNativePrompt ? 'Install App' : 'Get App'}</span>
+                  <span className="sm:hidden">{hasNativePrompt ? 'Install' : 'Get'}</span>
                 </button>
               )}
               <button
                 onClick={doScan}
                 disabled={loading}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all flex items-center gap-2 text-sm sm:text-base ${
                   loading
                     ? 'bg-gray-600 cursor-not-allowed animate-pulse'
                     : 'bg-cyan-600 hover:bg-cyan-700 shadow-lg hover:shadow-cyan-500/50'
                 }`}
               >
                 {loading && (
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                   </svg>
                 )}
-                {loading ? `Fetching Live Data... ${loadingTime}s` : 'Scan Markets'}
+                <span className="hidden sm:inline">{loading ? `Fetching Live Data... ${loadingTime}s` : 'Scan Markets'}</span>
+                <span className="sm:hidden">{loading ? `${loadingTime}s` : 'Scan'}</span>
               </button>
             </div>
           </div>
@@ -236,27 +290,27 @@ function App() {
                   <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-cyan-400">
-                    🌐 Fetching Real-Time Market Data
+                  <h3 className="text-lg sm:text-xl font-bold text-cyan-400">
+                    Fetching Real-Time Market Data
                   </h3>
-                  <p className="text-gray-300 mt-1">
-                    Connecting to Binance, Coinbase, Kraken, KuCoin...
+                  <p className="text-gray-300 mt-1 text-sm">
+                    Connecting to Coinbase, Kraken, KuCoin...
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-4xl font-mono font-bold text-cyan-400">{loadingTime}s</div>
+                <div className="text-3xl sm:text-4xl font-mono font-bold text-cyan-400">{loadingTime}s</div>
                 <div className="text-sm text-gray-400">Elapsed</div>
               </div>
             </div>
             <div className="mt-4 bg-gray-700 rounded-full h-3 overflow-hidden">
-              <div 
+              <div
                 className="bg-cyan-500 h-full rounded-full transition-all duration-1000"
                 style={{ width: `${Math.min((loadingTime / 15) * 100, 95)}%` }}
               />
             </div>
             <p className="text-xs text-gray-400 mt-2 text-center">
-              First scan ~25s (initializing) • Subsequent ~11s (cached)
+              First scan ~25s (initializing) - Subsequent ~11s (cached)
             </p>
           </div>
         )}
@@ -280,6 +334,41 @@ function App() {
           </div>
         </div>
       </main>
+
+      {/* Mobile Install Banner - sticky bottom bar on mobile */}
+      {showMobileBanner && !isStandalone && !bannerDismissed && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-green-600 to-cyan-600 text-white p-4 shadow-2xl z-50 sm:hidden">
+          <div className="flex items-center justify-between max-w-lg mx-auto">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 rounded-lg p-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-bold text-sm">Install OmniQuant</div>
+                <div className="text-xs opacity-80">Add to home screen for quick access</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleInstallClick}
+                className="bg-white text-green-700 px-4 py-2 rounded-lg font-bold text-sm"
+              >
+                Install
+              </button>
+              <button
+                onClick={() => { setShowMobileBanner(false); setBannerDismissed(true); }}
+                className="text-white/70 hover:text-white p-1"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <PWADebug />
     </div>

@@ -17,7 +17,7 @@ function PWADebug() {
         serviceWorker: 'serviceWorker' in navigator,
         manifest: document.querySelector('link[rel="manifest"]') !== null,
         standalone: window.matchMedia('(display-mode: standalone)').matches,
-        beforeInstallPrompt: false // Updated by event listener
+        beforeInstallPrompt: window.__promptCaptured === true
       };
 
       // Check service worker registration
@@ -35,14 +35,29 @@ function PWADebug() {
 
     checkPWAStatus();
 
+    // Re-check when prompt is captured
+    const handlePromptCaptured = () => {
+      setPwaStatus(prev => ({ ...prev, beforeInstallPrompt: true }));
+    };
+
     const handleBeforeInstallPrompt = () => {
       setPwaStatus(prev => ({ ...prev, beforeInstallPrompt: true }));
     };
 
+    window.addEventListener('pwa-prompt-captured', handlePromptCaptured);
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Periodically re-check (prompt may arrive later due to engagement heuristics)
+    const interval = setInterval(() => {
+      if (window.__promptCaptured) {
+        setPwaStatus(prev => ({ ...prev, beforeInstallPrompt: true }));
+      }
+    }, 5000);
+
     return () => {
+      window.removeEventListener('pwa-prompt-captured', handlePromptCaptured);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      clearInterval(interval);
     };
   }, []);
 

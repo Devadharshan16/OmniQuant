@@ -22,7 +22,8 @@ self.addEventListener('install', (event) => {
       });
     })
   );
-  self.skipWaiting();
+  // Don't call skipWaiting() here — it causes reload loops.
+  // Only skip waiting when explicitly requested via message.
 });
 
 // Activate event - clean up old caches
@@ -40,7 +41,9 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  self.clients.claim();
+  // Do NOT call self.clients.claim() here - it triggers controllerchange
+  // which can cause page reload loops. The new SW will take over naturally
+  // on the next navigation.
 });
 
 // Fetch event - network first for API, cache first for assets
