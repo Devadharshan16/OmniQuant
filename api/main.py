@@ -34,6 +34,15 @@ except ImportError:
     CPP_AVAILABLE = False
     print("⚠️ Warning: C++ module not available. Using Python fallback.")
 
+# Try to import real market data fetcher
+try:
+    from api.real_market_data import RealMarketDataFetcher
+    REAL_DATA_AVAILABLE = True
+    print("✓ Real-time market data fetcher available")
+except ImportError:
+    REAL_DATA_AVAILABLE = False
+    print("⚠️ Warning: Real-time data fetcher not available. Install with: pip install ccxt")
+
 
 # ============================================================================
 # API Models
@@ -156,6 +165,139 @@ async def health_check():
         "opportunities_cached": len(state.opportunities),
         "uptime_scans": state.scan_count
     }
+
+
+@app.post("/quick_scan", response_model=Dict[str, Any])
+async def quick_scan(use_real_data: bool = False, symbols: Optional[List[str]] = None):
+    """
+    Quick scan endpoint that generates market data internally
+    
+    Args:
+        use_real_data: If True, fetch real-time prices from exchanges
+        symbols: Optional list of trading pairs (e.g., ['BTC/USDT', 'ETH/USDT'])
+    
+    Returns:
+        Arbitrage opportunities with full risk analysis
+    """
+    start_time = time.time()
+    
+    try:
+        # Generate or fetch market data
+        if use_real_data and REAL_DATA_AVAILABLE:
+            print("\n🌐 Fetching REAL market data from exchanges...")
+            fetcher = RealMarketDataFetcher()
+            raw_data = fetcher.fetch_real_prices(symbols)
+            data_source = "Real Exchanges"
+        elif use_real_data and not REAL_DATA_AVAILABLE:
+            return {
+                "success": False,
+                "error": "Real-time data not available. Install with: pip install ccxt",
+                "data_source": "unavailable"
+            }
+        else:
+            print("\n🎲 Generating simulated market data...")
+            raw_data = _generate_simulated_market_data()
+            data_source = "Simulated"
+        
+        print(f"✓ Loaded {len(raw_data)} trading pairs from {data_source}")
+        
+        # Convert to MarketPair format
+        market_data = [
+            MarketPair(
+                from_token=pair['from'],
+                to_token=pair['to'],
+                rate=pair['rate'],
+                fee=pair.get('fee', 0.001),
+                liquidity=pair.get('liquidity', 10000),
+                exchange=pair['exchange'],
+                volatility=pair.get('volatility', 0.01)
+            )
+            for pair in raw_data
+        ]
+        
+        # Create scan request
+        scan_request = ScanRequest(
+            market_data=market_data,
+            capital=1000.0,
+            max_cycles=10,
+            run_monte_carlo=True,
+            mc_simulations=500
+        )
+        
+        # Perform scan
+        result = await scan_arbitrage(scan_request)
+        
+        # Add data source info
+        result['data_source'] = data_source
+        result['is_real_data'] = use_real_data and REAL_DATA_AVAILABLE
+        result['pairs_analyzed'] = len(market_data)
+        
+        return result
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Quick scan failed: {str(e)}")
+
+
+def _generate_simulated_market_data() -> List[Dict[str, Any]]:
+    """Generate realistic simulated market data"""
+    import random
+    random.seed(int(time.time()))
+    
+    # Base exchange rates (realistic starting points)
+    base_rates = {
+        ('BTC', 'USDT'): 45000.0,
+        ('ETH', 'USDT'): 2500.0,
+        ('BNB', 'USDT'): 300.0,
+        ('SOL', 'USDT'): 100.0,
+        ('XRP', 'USDT'): 0.5,
+        ('ADA', 'USDT'): 0.4,
+    }
+    
+    # Derive cross rates
+    base_rates[('BTC', 'ETH')] = base_rates[('BTC', 'USDT')] / base_rates[('ETH', 'USDT')]
+    base_rates[('ETH', 'BTC')] = 1 / base_rates[('BTC', 'ETH')]
+    base_rates[('BNB', 'BTC')] = base_rates[('BNB', 'USDT')] / base_rates[('BTC', 'USDT')]
+    base_rates[('SOL', 'ETH')] = base_rates[('SOL', 'USDT')] / base_rates[('ETH', 'USDT')]
+    
+    exchanges = ['Binance_SIM', 'Coinbase_SIM', 'Kraken_SIM', 'KuCoin_SIM']
+    pairs = []
+    
+    for (from_token, to_token), base_rate in base_rates.items():
+        for exchange in exchanges:
+            # Add noise to create price differences (potential arbitrage)
+            noise = random.uniform(-0.005, 0.005)  # ±0.5%
+            rate = base_rate * (1 + noise)
+            
+            # Occasionally create bigger inefficiencies for demo
+            if random.random() < 0.1:  # 10% chance
+                rate *= (1 + random.uniform(0.001, 0.003))  # Extra 0.1-0.3%
+            
+            pairs.append({
+                'from': from_token,
+                'to': to_token,
+                'rate': rate,
+                'fee': random.uniform(0.0005, 0.002),  # 0.05% - 0.2%
+                'liquidity': random.uniform(10000, 100000),
+                'exchange': exchange,
+                'volatility': random.uniform(0.005, 0.02),  # 0.5% - 2%
+                'is_real': False
+            })
+            
+            # Add reverse pair
+            pairs.append({
+                'from': to_token,
+                'to': from_token,
+                'rate': 1 / rate if rate > 0 else 0,
+                'fee': random.uniform(0.0005, 0.002),
+                'liquidity': random.uniform(10000, 100000),
+                'exchange': exchange,
+                'volatility': random.uniform(0.005, 0.02),
+                'is_real': False
+            })
+    
+    return pairs
 
 
 @app.post("/scan", response_model=Dict[str, Any])

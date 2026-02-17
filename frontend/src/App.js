@@ -10,6 +10,8 @@ function App() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [useRealData, setUseRealData] = useState(false);
+  const [dataSource, setDataSource] = useState('Simulated');
 
   useEffect(() => {
     fetchMetrics();
@@ -35,32 +37,23 @@ function App() {
     setError(null);
     
     try {
-      // Example market data
-      const scanData = {
-        market_data: [
-          { from_token: "BTC", to_token: "ETH", rate: 15.5, fee: 0.001, liquidity: 10000, exchange: "Exchange1" },
-          { from_token: "ETH", to_token: "USDT", rate: 2500, fee: 0.001, liquidity: 50000, exchange: "Exchange2" },
-          { from_token: "USDT", to_token: "BTC", rate: 0.000025, fee: 0.001, liquidity: 100000, exchange: "Exchange3" }
-        ],
-        capital: 1000.0,
-        max_cycles: 10,
-        run_monte_carlo: true,
-        mc_simulations: 500
-      };
-
-      const response = await fetch('http://localhost:8000/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scanData)
-      });
+      // Use new quick_scan endpoint that handles data generation
+      const response = await fetch(
+        `http://localhost:8000/quick_scan?use_real_data=${useRealData}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
 
       const data = await response.json();
       
       if (data.success) {
         setOpportunities(data.opportunities || []);
+        setDataSource(data.data_source);
         await fetchMetrics();
       } else {
-        setError('Scan failed');
+        setError(data.error || 'Scan failed');
       }
     } catch (err) {
       setError('Failed to scan: ' + err.message);
@@ -84,17 +77,40 @@ function App() {
                 Quantitative Market Inefficiency Research Platform
               </p>
             </div>
-            <button
-              onClick={handleScan}
-              disabled={loading}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                loading
-                  ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-cyan-600 hover:bg-cyan-700 shadow-lg hover:shadow-cyan-500/50'
-              }`}
-            >
-              {loading ? 'Scanning...' : 'Scan Markets'}
-            </button>
+            <div className="flex items-center gap-4">
+              {/* Data Source Toggle */}
+              <div className="flex flex-col items-end gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-sm text-gray-300">Real-Time Data</span>
+                  <input
+                    type="checkbox"
+                    checked={useRealData}
+                    onChange={(e) => setUseRealData(e.target.checked)}
+                    className="w-4 h-4 rounded"
+                  />
+                </label>
+                <span className={`text-xs px-2 py-1 rounded ${
+                  dataSource === 'Real Exchanges' 
+                    ? 'bg-green-900/50 text-green-300' 
+                    : 'bg-yellow-900/50 text-yellow-300'
+                }`}>
+                  {dataSource}
+                </span>
+              </div>
+              
+              {/* Scan Button */}
+              <button
+                onClick={handleScan}
+                disabled={loading}
+                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                  loading
+                    ? 'bg-gray-600 cursor-not-allowed'
+                    : 'bg-cyan-600 hover:bg-cyan-700 shadow-lg hover:shadow-cyan-500/50'
+                }`}
+              >
+                {loading ? 'Scanning...' : 'Scan Markets'}
+              </button>
+            </div>
           </div>
         </div>
       </header>
