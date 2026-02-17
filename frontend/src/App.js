@@ -59,14 +59,16 @@ function App() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      // If no deferred prompt, show instructions
+      alert('To install:\n\n• Chrome Desktop: Click ⊕ icon in address bar\n• Chrome Mobile: Menu → "Add to Home Screen"\n• Safari iOS: Share → "Add to Home Screen"');
+      return;
+    }
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     
-    if (outcome === 'accepted') {
-      console.log('[PWA] User accepted install');
-    }
+    console.log(`[PWA] User ${outcome === 'accepted' ? 'accepted' : 'dismissed'} install`);
     
     setDeferredPrompt(null);
     setShowInstallButton(false);
@@ -164,7 +166,8 @@ function App() {
               <ConnectionStatus />
             </div>
             <div className="flex items-center gap-4">
-              {showInstallButton && (
+              {/* Always show install button on production */}
+              {(showInstallButton || (window.location.hostname !== 'localhost' && !window.matchMedia('(display-mode: standalone)').matches)) && (
                 <button
                   onClick={handleInstallClick}
                   className="px-4 py-2 rounded-lg font-semibold bg-green-600 hover:bg-green-700 shadow-lg transition-all flex items-center gap-2 text-sm"
