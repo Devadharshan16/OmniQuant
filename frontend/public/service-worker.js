@@ -7,9 +7,6 @@ const API_CACHE_NAME = 'omniquant-api-cache-v1';
 const CORE_ASSETS = [
   '/',
   '/index.html',
-  '/static/css/main.chunk.css',
-  '/static/js/main.chunk.js',
-  '/static/js/bundle.js',
   '/manifest.json'
 ];
 
@@ -52,7 +49,15 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // API requests - network first with cache fallback
-  if (url.pathname.includes('/api/') || url.port === '8000') {
+  // Check if URL is to an API endpoint (different origin or contains /api/)
+  const isApiRequest = 
+    url.pathname.includes('/api/') || 
+    url.pathname.includes('/quick_scan') ||
+    url.pathname.includes('/health') ||
+    url.pathname.includes('/metrics') ||
+    (url.origin !== self.location.origin && !url.pathname.endsWith('.js') && !url.pathname.endsWith('.css'));
+
+  if (isApiRequest) {
     event.respondWith(
       fetch(request)
         .then((response) => {
