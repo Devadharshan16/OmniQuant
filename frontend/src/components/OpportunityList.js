@@ -13,15 +13,16 @@ function OpportunityList({ opportunities, loading }) {
 
   if (!opportunities || opportunities.length === 0) {
     return (
-      <div className="card text-center py-12">
-        <p className="text-gray-400">No opportunities detected. Click "Scan Markets" to start.</p>
+      <div className="card text-center py-16">
+        <div className="text-4xl mb-3 opacity-60">📡</div>
+        <p className="text-gray-500 text-sm">No opportunities detected. Click <span className="text-cyan-400 font-semibold">"Scan Markets"</span> to start.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-cyan-400 mb-4">
+      <h2 className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-4">
         Detected Opportunities ({opportunities.length})
       </h2>
       
@@ -67,7 +68,7 @@ function OpportunityCard({ opportunity, rank }) {
     <div className={`opportunity-card ${borderColor}`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center space-x-3">
-          <div className={`${isProfitable ? 'bg-green-600' : 'bg-yellow-600'} text-white rounded-full w-8 h-8 flex items-center justify-center font-bold`}>
+          <div className={`${isProfitable ? 'bg-gradient-to-br from-emerald-500 to-green-600' : 'bg-gradient-to-br from-amber-500 to-yellow-600'} text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm shadow-lg`}>
             {rank}
           </div>
           <div>
@@ -115,24 +116,24 @@ function OpportunityCard({ opportunity, rank }) {
       )}
 
       {opportunity.monte_carlo && (
-        <div className="mt-3 pt-3 border-t border-gray-700">
-          <div className="text-xs text-gray-400 mb-2">Monte Carlo Results:</div>
+        <div className="mt-3 pt-3 border-t border-gray-700/50">
+          <div className="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">Monte Carlo Results</div>
           <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="bg-gray-800 p-2 rounded">
-              <div className="text-gray-500">Mean</div>
-              <div className="text-cyan-400 font-semibold">
+            <div className="bg-gray-800/60 p-2.5 rounded-lg border border-gray-700/40">
+              <div className="text-gray-500 text-[0.65rem] uppercase">Mean</div>
+              <div className="text-cyan-400 font-semibold mt-0.5">
                 {(opportunity.monte_carlo.mean_return * 100).toFixed(3)}%
               </div>
             </div>
-            <div className="bg-gray-800 p-2 rounded">
-              <div className="text-gray-500">Std Dev</div>
-              <div className="text-cyan-400 font-semibold">
+            <div className="bg-gray-800/60 p-2.5 rounded-lg border border-gray-700/40">
+              <div className="text-gray-500 text-[0.65rem] uppercase">Std Dev</div>
+              <div className="text-cyan-400 font-semibold mt-0.5">
                 {(opportunity.monte_carlo.std_return * 100).toFixed(3)}%
               </div>
             </div>
-            <div className="bg-gray-800 p-2 rounded">
-              <div className="text-gray-500">Sharpe</div>
-              <div className="text-cyan-400 font-semibold">
+            <div className="bg-gray-800/60 p-2.5 rounded-lg border border-gray-700/40">
+              <div className="text-gray-500 text-[0.65rem] uppercase">Sharpe</div>
+              <div className="text-cyan-400 font-semibold mt-0.5">
                 {opportunity.monte_carlo.sharpe_ratio.toFixed(2)}
               </div>
             </div>

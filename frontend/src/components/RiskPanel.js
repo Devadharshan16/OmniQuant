@@ -4,8 +4,8 @@ function RiskPanel({ opportunities }) {
   if (!opportunities || opportunities.length === 0) {
     return (
       <div className="card">
-        <h3 className="text-xl font-bold text-cyan-400 mb-4">Risk Overview</h3>
-        <p className="text-gray-400 text-sm">No opportunities to analyze</p>
+        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-4">Risk Overview</h3>
+        <p className="text-gray-500 text-sm">No opportunities to analyze</p>
       </div>
     );
   }
@@ -31,7 +31,7 @@ function RiskPanel({ opportunities }) {
 
   return (
     <div className="card">
-      <h3 className="text-xl font-bold text-cyan-400 mb-4">Risk Overview</h3>
+      <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-5">Risk Overview</h3>
       
       <div className="space-y-4">
         <div>
@@ -60,8 +60,8 @@ function RiskPanel({ opportunities }) {
           </div>
         </div>
 
-        <div className="pt-4 border-t border-gray-700">
-          <div className="text-sm text-gray-400 mb-3">Risk Distribution</div>
+        <div className="pt-4 border-t border-gray-700/50">
+          <div className="text-xs text-gray-500 mb-3 uppercase tracking-wider font-medium">Risk Distribution</div>
           <div className="space-y-2">
             {Object.entries(riskDistribution).map(([level, count]) => (
               count > 0 && (
@@ -76,8 +76,8 @@ function RiskPanel({ opportunities }) {
           </div>
         </div>
 
-        <div className="pt-4 border-t border-gray-700">
-          <div className="text-sm text-gray-400 mb-2">Risk Factors</div>
+        <div className="pt-4 border-t border-gray-700/50">
+          <div className="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">Risk Factors</div>
           <div className="space-y-2 text-xs">
             <RiskFactor 
               label="Liquidity"

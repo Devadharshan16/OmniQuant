@@ -226,27 +226,27 @@ function App() {
   return (
     <div className="App min-h-screen bg-gray-900 text-gray-100">
 
-      <header className="bg-gray-800 shadow-lg border-b border-cyan-500">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <header className="header-accent bg-gray-900/80 backdrop-blur-md shadow-2xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
           <div className="flex justify-between items-center">
             <div className="min-w-0 flex-shrink">
-              <h1 className="text-3xl sm:text-4xl font-bold text-cyan-400">
-                OmniQuant <span className="text-gray-400">v2</span>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+                OmniQuant
               </h1>
-              <p className="text-gray-400 mt-1 text-sm sm:text-base truncate">
+              <p className="text-gray-500 mt-1 text-xs sm:text-sm font-medium tracking-wide truncate">
                 Quantitative Market Inefficiency Research Platform
               </p>
-              <ConnectionStatus />
+              <div className="mt-1"><ConnectionStatus /></div>
             </div>
             <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-2">
               {/* Install button - always visible when not standalone */}
               {!isStandalone && (
                 <button
                   onClick={handleInstallClick}
-                  className={`px-3 sm:px-4 py-2 rounded-lg font-semibold shadow-lg transition-all flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm whitespace-nowrap ${
+                  className={`px-3 sm:px-4 py-2 rounded-xl font-semibold shadow-lg transition-all duration-300 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm whitespace-nowrap border ${
                     hasNativePrompt
-                      ? 'bg-green-500 hover:bg-green-600 animate-pulse'
-                      : 'bg-green-600 hover:bg-green-700'
+                      ? 'bg-emerald-500/90 hover:bg-emerald-400 border-emerald-400/50 shadow-emerald-500/25 animate-pulse'
+                      : 'bg-emerald-600/80 hover:bg-emerald-500 border-emerald-500/30 hover:shadow-emerald-500/20'
                   }`}
                   title="Install OmniQuant as an app"
                 >
@@ -260,10 +260,10 @@ function App() {
               <button
                 onClick={doScan}
                 disabled={loading}
-                className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition-all flex items-center gap-2 text-sm sm:text-base ${
+                className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 text-sm sm:text-base border ${
                   loading
-                    ? 'bg-gray-600 cursor-not-allowed animate-pulse'
-                    : 'bg-cyan-600 hover:bg-cyan-700 shadow-lg hover:shadow-cyan-500/50'
+                    ? 'bg-gray-700/80 border-gray-600 cursor-not-allowed animate-pulse'
+                    : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 border-cyan-500/30 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-400/40 hover:-translate-y-0.5'
                 }`}
               >
                 {loading && (
@@ -283,49 +283,50 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* ======= LOADING INDICATOR ======= */}
         {loading && (
-          <div className="border-2 border-cyan-500 rounded-lg p-6 mb-6 bg-gray-800">
+          <div className="border border-cyan-500/30 rounded-2xl p-6 mb-6 bg-gray-800/60 backdrop-blur-sm shadow-lg shadow-cyan-500/10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
+                  <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-b-blue-500/40 rounded-full animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold text-cyan-400">
+                  <h3 className="text-lg sm:text-xl font-bold text-cyan-300">
                     Fetching Real-Time Market Data
                   </h3>
-                  <p className="text-gray-300 mt-1 text-sm">
+                  <p className="text-gray-400 mt-1 text-sm">
                     Connecting to Coinbase, Kraken, KuCoin...
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-3xl sm:text-4xl font-mono font-bold text-cyan-400">{loadingTime}s</div>
-                <div className="text-sm text-gray-400">Elapsed</div>
+                <div className="text-3xl sm:text-4xl font-mono font-bold text-cyan-400 glow-text">{loadingTime}s</div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider">Elapsed</div>
               </div>
             </div>
-            <div className="mt-4 bg-gray-700 rounded-full h-3 overflow-hidden">
+            <div className="mt-4 bg-gray-700/60 rounded-full h-2.5 overflow-hidden">
               <div
-                className="bg-cyan-500 h-full rounded-full transition-all duration-1000"
-                style={{ width: `${Math.min((loadingTime / 15) * 100, 95)}%` }}
+                className="h-full rounded-full transition-all duration-1000 progress-shimmer"
+                style={{ width: `${Math.min((loadingTime / 15) * 100, 95)}%`, background: 'linear-gradient(90deg, #06b6d4, #3b82f6, #06b6d4)' }}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-2 text-center">
-              First scan ~25s (initializing) - Subsequent ~11s (cached)
+            <p className="text-xs text-gray-500 mt-2.5 text-center tracking-wide">
+              First scan ~25s (initializing) · Subsequent ~11s (cached)
             </p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-6">
-            <p className="text-red-200">{error}</p>
+          <div className="bg-red-900/30 border border-red-500/40 rounded-xl p-4 mb-6 backdrop-blur-sm">
+            <p className="text-red-300 text-sm">{error}</p>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-5 mb-8">
           <MetricsPanel metrics={metrics} userScanCount={scanCount} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
           <div className="lg:col-span-2">
             <OpportunityList opportunities={opportunities} loading={loading} />
           </div>
@@ -337,23 +338,23 @@ function App() {
 
       {/* Mobile Install Banner - sticky bottom bar on mobile */}
       {showMobileBanner && !isStandalone && !bannerDismissed && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-green-600 to-cyan-600 text-white p-4 shadow-2xl z-50 sm:hidden">
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-emerald-600/95 to-cyan-600/95 text-white p-4 shadow-2xl z-50 sm:hidden backdrop-blur-md border-t border-white/10">
           <div className="flex items-center justify-between max-w-lg mx-auto">
             <div className="flex items-center gap-3">
-              <div className="bg-white/20 rounded-lg p-2">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-white/15 rounded-xl p-2.5">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
               </div>
               <div>
-                <div className="font-bold text-sm">Install OmniQuant</div>
-                <div className="text-xs opacity-80">Add to home screen for quick access</div>
+                <div className="font-bold text-sm tracking-tight">Install OmniQuant</div>
+                <div className="text-xs opacity-75">Quick access from home screen</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleInstallClick}
-                className="bg-white text-green-700 px-4 py-2 rounded-lg font-bold text-sm"
+                className="bg-white text-emerald-700 px-4 py-2 rounded-xl font-bold text-sm shadow-lg"
               >
                 Install
               </button>
