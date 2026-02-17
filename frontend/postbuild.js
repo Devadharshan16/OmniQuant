@@ -7,6 +7,8 @@ const files = [
   { src: 'public/manifest.json', dest: 'build/manifest.json' },
   { src: 'public/icon-192.png', dest: 'build/icon-192.png' },
   { src: 'public/icon-512.png', dest: 'build/icon-512.png' },
+  { src: 'public/icon-maskable-192.png', dest: 'build/icon-maskable-192.png' },
+  { src: 'public/icon-maskable-512.png', dest: 'build/icon-maskable-512.png' },
   { src: 'public/icon.svg', dest: 'build/icon.svg' }
 ];
 
