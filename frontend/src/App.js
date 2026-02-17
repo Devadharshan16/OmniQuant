@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import Dashboard from './components/Dashboard';
 import OpportunityList from './components/OpportunityList';
 import RiskPanel from './components/RiskPanel';
 import MetricsPanel from './components/MetricsPanel';
