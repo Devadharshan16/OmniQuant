@@ -83,16 +83,17 @@ class RealMarketDataFetcher:
             List of dictionaries containing real trading pair data
         """
         if symbols is None:
-            # Reduced to 4 major pairs for speed (was 6)
+            # Include cross-pairs for more arbitrage cycle detection
             symbols = [
-                'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'SOL/USDT'
+                'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'SOL/USDT',
+                'ETH/BTC', 'SOL/ETH'
             ]
         
         print(f"📊 Fetching real-time prices for {len(symbols)} pairs from {len(self.exchanges)} exchanges...")
         
         pairs = []
         fetch_count = 0
-        max_fetches = 12  # Limit total fetches for speed
+        max_fetches = 20  # Allow more fetches for cross-pairs
         
         for exchange_name, exchange in self.exchanges.items():
             for symbol in symbols:
@@ -123,7 +124,7 @@ class RealMarketDataFetcher:
                         'ask': ask_price,
                         'last': last_price,
                         'volume': float(ticker.get('quoteVolume', 0)) if ticker.get('quoteVolume') else 0,
-                        'fee': 0.001,  # 0.1% typical trading fee
+                        'fee': 0.0005,  # 0.05% maker fee (realistic for high-volume traders)
                         'liquidity': float(ticker.get('quoteVolume', 0)) * 0.01 if ticker.get('quoteVolume') else 10000,
                         'exchange': exchange_name,
                         'timestamp': ticker.get('timestamp', int(time.time() * 1000)),
@@ -141,7 +142,7 @@ class RealMarketDataFetcher:
                         'ask': 1 / bid_price if bid_price > 0 else 0,
                         'last': 1 / last_price if last_price > 0 else 0,
                         'volume': float(ticker.get('baseVolume', 0)) if ticker.get('baseVolume') else 0,
-                        'fee': 0.001,
+                        'fee': 0.0005,  # 0.05% maker fee
                         'liquidity': float(ticker.get('baseVolume', 0)) * 0.01 if ticker.get('baseVolume') else 10000,
                         'exchange': exchange_name,
                         'timestamp': ticker.get('timestamp', int(time.time() * 1000)),

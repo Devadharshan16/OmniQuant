@@ -265,10 +265,11 @@ async def quick_scan(use_real_data: bool = False, symbols: Optional[List[str]] =
 
 
 def _generate_simulated_market_data() -> List[Dict[str, Any]]:
-    """Generate realistic simulated market data"""
+    """Generate simulated market data - deterministic within same 10-second window"""
     import random
-    # Use microseconds for better randomness on fast requests
-    random.seed(int(time.time() * 1000000) % 2147483647)
+    # Seed based on 10-second window so all devices get same data in same window
+    time_window = int(time.time() / 10)
+    random.seed(time_window)
     
     # Base exchange rates (realistic starting points)
     base_rates = {
@@ -579,50 +580,112 @@ def _scan_with_cpp(request: ScanRequest) -> List[Dict[str, Any]]:
 
 
 def _scan_with_python_fallback(request: ScanRequest) -> List[Dict[str, Any]]:
-    """Python fallback for arbitrage detection"""
-    import random
-    # Use microseconds for unique opportunities each call
-    random.seed(int(time.time() * 1000000) % 2147483647)
+    """
+    Real graph-based arbitrage detection.
+    Builds a directed graph from actual market data and finds profitable cycles
+    using DFS. Results are DETERMINISTIC - same prices = same results on every device.
+    """
+    from collections import defaultdict
     
+    scan_start = time.time()
+    
+    # Step 1: Build adjacency graph from the actual market data
+    graph = defaultdict(list)
+    tokens = set()
+    
+    for pair in request.market_data:
+        graph[pair.from_token].append((
+            pair.to_token,
+            pair.rate,
+            pair.fee,
+            pair.exchange
+        ))
+        tokens.add(pair.from_token)
+        tokens.add(pair.to_token)
+    
+    token_list = sorted(tokens)  # Sorted for deterministic ordering
+    
+    if not token_list or not request.market_data:
+        return []
+    
+    print(f"  Graph: {len(token_list)} tokens, {len(request.market_data)} edges")
+    
+    # Step 2: Find all profitable cycles via DFS
+    # For each edge A->B with rate r and fee f, effective multiplier = r * (1 - f)
+    # A cycle is profitable if product of multipliers > 1.0
     opportunities = []
+    seen_paths = set()
     
-    # Define possible tokens
-    tokens = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'ADA']
+    def find_cycles_from(start, max_depth=5):
+        results = []
+        stack = [(start, [start], 1.0, [])]
+        
+        while stack and len(results) < request.max_cycles:
+            current, path, multiplier, exchanges = stack.pop()
+            
+            for (next_token, rate, fee, exchange) in graph[current]:
+                if rate <= 0:
+                    continue
+                
+                new_mult = multiplier * rate * (1 - fee)
+                new_path = path + [next_token]
+                new_exch = exchanges + [exchange]
+                
+                # Check if we completed a cycle back to start
+                if next_token == start and len(path) >= 3:
+                    raw_profit = new_mult - 1.0
+                    if raw_profit > 0.0001:  # At least 0.01% profit
+                        # Normalize cycle for dedup
+                        cycle_tokens = tuple(new_path[:-1])
+                        min_idx = cycle_tokens.index(min(cycle_tokens))
+                        normalized = cycle_tokens[min_idx:] + cycle_tokens[:min_idx]
+                        exch_key = tuple(sorted(set(new_exch)))
+                        dedup_key = (normalized, exch_key)
+                        
+                        if dedup_key not in seen_paths:
+                            seen_paths.add(dedup_key)
+                            results.append({
+                                'path': new_path,
+                                'multiplier': new_mult,
+                                'raw_profit': raw_profit,
+                                'exchanges': new_exch
+                            })
+                
+                # Continue DFS if not too deep and not revisiting
+                elif next_token != start and next_token not in path and len(path) < max_depth:
+                    stack.append((next_token, new_path, new_mult, new_exch))
+        
+        return results
     
-    # Generate 1-3 random opportunities with varying returns
-    num_opportunities = random.randint(1, 3)
+    # Search from every token (sorted = deterministic order)
+    for token in token_list:
+        if len(opportunities) >= request.max_cycles:
+            break
+        cycles = find_cycles_from(token, max_depth=5)
+        for cycle in cycles:
+            if len(opportunities) >= request.max_cycles:
+                break
+            detection_time = (time.time() - scan_start) * 1000
+            opportunities.append({
+                'id': f"opp_{int(time.time()*1000)}_{len(opportunities)}",
+                'path': cycle['path'],
+                'raw_profit': round(cycle['raw_profit'], 8),
+                'expected_return': round(cycle['raw_profit'] * 0.95, 8),  # 5% slippage estimate
+                'path_length': len(cycle['path']) - 1,
+                'detection_time_ms': round(detection_time, 2)
+            })
     
-    for i in range(num_opportunities):
-        # Random path length (3-5 steps)
-        path_length = random.randint(3, 5)
-        
-        # Build random path
-        start_token = random.choice(tokens)
-        path = [start_token]
-        available_tokens = [t for t in tokens if t != start_token]
-        
-        for _ in range(path_length - 1):
-            next_token = random.choice(available_tokens)
-            path.append(next_token)
-            available_tokens = [t for t in tokens if t != next_token]
-        
-        # Close the loop
-        path.append(start_token)
-        
-        # Generate random profit (0.08% to 0.5%)
-        raw_profit = random.uniform(0.0008, 0.005)
-        
-        # Add some variance to expected return vs raw profit
-        expected_return = raw_profit * random.uniform(0.92, 1.08)
-        
-        opportunities.append({
-            'id': f"opp_{int(time.time()*1000)}_{i}",
-            'path': path,
-            'raw_profit': round(raw_profit, 6),
-            'expected_return': round(expected_return, 6),
-            'path_length': len(path) - 1,
-            'detection_time_ms': random.uniform(10.0, 25.0)
-        })
+    # Sort by profit descending (deterministic)
+    opportunities.sort(key=lambda x: -x['raw_profit'])
+    opportunities = opportunities[:request.max_cycles]
+    
+    print(f"  Found {len(opportunities)} real arbitrage opportunities")
+    if opportunities:
+        best = opportunities[0]
+        path_str = ' -> '.join(best['path'])
+        print(f"  Best: {path_str} ({best['raw_profit']*100:.4f}%)")
+    else:
+        print(f"  No profitable cycles found (markets are efficient)")
     
     return opportunities
 
