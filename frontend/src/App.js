@@ -17,6 +17,21 @@ function App() {
     return parseInt(localStorage.getItem('omniquant_scan_count') || '0', 10);
   });
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [loadingTime, setLoadingTime] = useState(0);
+
+  // Timer for loading indicator
+  useEffect(() => {
+    let interval;
+    if (loading) {
+      setLoadingTime(0);
+      interval = setInterval(() => {
+        setLoadingTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [loading]);
 
   const fetchMetrics = useCallback(async () => {
     try {
@@ -130,13 +145,19 @@ function App() {
               <button
                 onClick={handleScan}
                 disabled={loading}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                className={`px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 ${
                   loading
                     ? 'bg-gray-600 cursor-not-allowed'
                     : 'bg-cyan-600 hover:bg-cyan-700 shadow-lg hover:shadow-cyan-500/50'
                 }`}
               >
-                {loading ? '🌐 Fetching Real-Time Data...' : 'Scan Markets'}
+                {loading && (
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {loading ? 'Fetching Real-Time Data...' : 'Scan Markets'}
               </button>
             </div>
           </div>
@@ -144,6 +165,39 @@ function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Loading Indicator */}
+        {loading && (
+          <div className="bg-gradient-to-r from-cyan-900/50 to-blue-900/50 border-2 border-cyan-500 rounded-lg p-6 mb-6 animate-pulse">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <svg className="animate-spin h-8 w-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <div>
+                  <h3 className="text-xl font-bold text-cyan-400">🌐 Fetching Real-Time Market Data</h3>
+                  <p className="text-gray-300 mt-1">
+                    Connecting to Binance, Coinbase, Kraken, KuCoin...
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-cyan-400">{loadingTime}s</div>
+                <div className="text-sm text-gray-400">Elapsed Time</div>
+              </div>
+            </div>
+            <div className="mt-4 bg-gray-800 rounded-full h-2 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full transition-all duration-1000 ease-out"
+                style={{ width: `${Math.min((loadingTime / 12) * 100, 100)}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              First scan: ~25s (initializing connections) • Subsequent scans: ~11s (cached connections)
+            </p>
+          </div>
+        )}
+        
         {error && (
           <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-6">
             <p className="text-red-200">{error}</p>
