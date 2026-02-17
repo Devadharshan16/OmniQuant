@@ -165,13 +165,6 @@ class RealMarketDataFetcher:
             
             if fetch_count >= max_fetches:
                 break
-                    continue
-                except ccxt.ExchangeError as e:
-                    print(f"  ⚠ Exchange error fetching {symbol} from {exchange_name}: {e}")
-                    continue
-                except Exception as e:
-                    print(f"  ⚠ Error fetching {symbol} from {exchange_name}: {e}")
-                    continue
         
         print(f"\n✓ Successfully fetched {fetch_count} real prices")
         print(f"✓ Generated {len(pairs)} trading pairs (including reverse pairs)\n")
