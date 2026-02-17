@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import OpportunityList from './components/OpportunityList';
 import RiskPanel from './components/RiskPanel';
@@ -16,25 +16,9 @@ function App() {
     // Load user's personal scan count from localStorage
     return parseInt(localStorage.getItem('omniquant_scan_count') || '0', 10);
   });
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
 
-  useEffect(() => {
-    fetchMetrics();
-    // Refresh metrics every 30 seconds
-    const interval = setInterval(fetchMetrics, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    // Auto-refresh opportunities every 60 seconds if we have any
-    if (opportunities.length > 0) {
-      const interval = setInterval(() => {
-        handleScan(true); // silent refresh (no loading state)
-      }, 60000);
-      return () => clearInterval(interval);
-    }
-  }, [opportunities.length]);
-
-  const fetchMetrics = async () => {
+  const fetchMetrics = useCallback(async () => {
     try {
       const response = await fetch(API_ENDPOINTS.METRICS);
       const data = await response.json();
@@ -44,17 +28,21 @@ function App() {
     } catch (err) {
       console.error('Failed to fetch metrics:', err);
     }
-  };
+  }, []);
 
-  const handleScan = async (silentRefresh = false) => {
+  const handleScan = useCallback(async (silentRefresh = false) => {
     if (!silentRefresh) {
       setLoading(true);
       setError(null);
       
       // Increment user's personal scan count
-      const newCount = userScanCount + 1;
+      const currentCount = parseInt(localStorage.getItem('omniquant_scan_count') || '0', 10);
+      const newCount = currentCount + 1;
       setUserScanCount(newCount);
       localStorage.setItem('omniquant_scan_count', newCount.toString());
+      
+      // Enable auto-refresh after first manual scan
+      setAutoRefreshEnabled(true);
     }
     
     try {
@@ -101,7 +89,25 @@ function App() {
         setLoading(false);
       }
     }
-  };
+  }, [fetchMetrics]);
+
+  useEffect(() => {
+    fetchMetrics();
+    // Refresh metrics every 30 seconds
+    const interval = setInterval(fetchMetrics, 30000);
+    return () => clearInterval(interval);
+  }, [fetchMetrics]);
+
+  useEffect(() => {
+    // Auto-refresh opportunities every 10 seconds after first scan
+    if (autoRefreshEnabled) {
+      console.log('🔄 Auto-refresh enabled: updating every 10 seconds');
+      const interval = setInterval(() => {
+        handleScan(true); // silent refresh
+      }, 10000); // 10 seconds for real-time feel
+      return () => clearInterval(interval);
+    }
+  }, [autoRefreshEnabled, handleScan]);
 
   return (
     <div className="App min-h-screen bg-gray-900 text-gray-100">
