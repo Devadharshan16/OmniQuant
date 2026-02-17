@@ -155,6 +155,11 @@ class ApplicationState:
         
         # Cached real-time data fetcher (expensive to create)
         self.real_data_fetcher = None
+        
+        # Shared market data cache for consistency across devices
+        self.cached_real_market_data = None
+        self.cached_data_timestamp = 0.0
+        self.CACHE_DURATION = 10.0  # Increased to 10s to ensure consistent view across devices
 
 state = ApplicationState()
 
@@ -205,13 +210,26 @@ async def quick_scan(use_real_data: bool = False, symbols: Optional[List[str]] =
     try:
         # Generate or fetch market data
         if use_real_data and REAL_DATA_AVAILABLE:
-            print("\n🌐 Fetching REAL market data from exchanges...")
-            # Reuse cached fetcher instance (much faster!)
-            if state.real_data_fetcher is None:
-                print("   Initializing exchange connections (first time only)...")
-                state.real_data_fetcher = RealMarketDataFetcher()
-            raw_data = state.real_data_fetcher.fetch_real_prices(symbols)
-            data_source = "Real Exchanges"
+            current_time = time.time()
+            
+            # Check global data cache first - crucial for cross-device consistency
+            if state.cached_real_market_data and (current_time - state.cached_data_timestamp < state.CACHE_DURATION):
+                # Use shared cached data if fresh enough (< 5s old)
+                # This ensures ALL users see the EXACT SAME data at the same time
+                raw_data = state.cached_real_market_data
+                data_source = "Real Exchanges (Cached Shared)"
+            else:
+                print("\n🌐 Fetching REAL market data from exchanges...")
+                # Reuse cached fetcher instance (much faster!)
+                if state.real_data_fetcher is None:
+                    print("   Initializing exchange connections (first time only)...")
+                    state.real_data_fetcher = RealMarketDataFetcher()
+                raw_data = state.real_data_fetcher.fetch_real_prices(symbols)
+                
+                # Update global cache
+                state.cached_real_market_data = raw_data
+                state.cached_data_timestamp = current_time
+                data_source = "Real Exchanges (Live)"
         elif use_real_data and not REAL_DATA_AVAILABLE:
             return {
                 "success": False,
