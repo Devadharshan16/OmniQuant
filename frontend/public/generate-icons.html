@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Generator - OmniQuant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #111827;
+      color: #06b6d4;
+    }
+    canvas {
+      border: 2px solid #06b6d4;
+      margin: 10px;
+      background: white;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #06b6d4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #0891b2;
+    }
+  </style>
+</head>
+<body>
+  <h1>OmniQuant Icon Generator</h1>
+  <p>Click the buttons below to download the PWA icons:</p>
+  
+  <div>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+  </div>
+  
+  <div>
+    <button onclick="downloadIcon(192)">Download 192x192 Icon</button>
+    <button onclick="downloadIcon(512)">Download 512x512 Icon</button>
+  </div>
+
+  <script>
+    function drawIcon(canvas) {
+      const ctx = canvas.getContext('2d');
+      const size = canvas.width;
+      const scale = size / 512;
+      
+      // Background
+      ctx.fillStyle = '#111827';
+      const cornerRadius = 80 * scale;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, cornerRadius);
+      ctx.fill();
+      
+      // Outer circle
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 12 * scale;
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, 180 * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Circles
+      ctx.fillStyle = '#06b6d4';
+      
+      // Top
+      ctx.beginPath();
+      ctx.arc(256 * scale, 180 * scale, 20 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Bottom right
+      ctx.beginPath();
+      ctx.arc(320 * scale, 280 * scale, 20 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Bottom left
+      ctx.beginPath();
+      ctx.arc(192 * scale, 280 * scale, 20 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Connection lines
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 8 * scale;
+      ctx.lineCap = 'round';
+      
+      ctx.beginPath();
+      ctx.moveTo(256 * scale, 200 * scale);
+      ctx.lineTo(320 * scale, 260 * scale);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(256 * scale, 200 * scale);
+      ctx.lineTo(192 * scale, 260 * scale);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(192 * scale, 280 * scale);
+      ctx.lineTo(320 * scale, 280 * scale);
+      ctx.stroke();
+      
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(256 * scale, 256 * scale, 12 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Text
+      ctx.fillStyle = '#06b6d4';
+      ctx.font = `bold ${72 * scale}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('OQ', 256 * scale, 400 * scale);
+    }
+    
+    // Draw icons on load
+    drawIcon(document.getElementById('canvas192'));
+    drawIcon(document.getElementById('canvas512'));
+    
+    function downloadIcon(size) {
+      const canvas = document.getElementById('canvas' + size);
+      const link = document.createElement('a');
+      link.download = `icon-${size}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>

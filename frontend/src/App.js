@@ -16,8 +16,44 @@ function App() {
     return parseInt(localStorage.getItem('omniquant_scan_count') || '0', 10);
   });
   const [hasScanned, setHasScanned] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
   const timerRef = useRef(null);
   const refreshRef = useRef(null);
+
+  // PWA Install Prompt
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Hide button if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowInstallButton(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      console.log('[PWA] User accepted install');
+    }
+    
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
 
   // Fetch metrics
   useEffect(() => {
@@ -111,6 +147,18 @@ function App() {
               <ConnectionStatus />
             </div>
             <div className="flex items-center gap-4">
+              {showInstallButton && (
+                <button
+                  onClick={handleInstallClick}
+                  className="px-4 py-2 rounded-lg font-semibold bg-green-600 hover:bg-green-700 shadow-lg transition-all flex items-center gap-2 text-sm"
+                  title="Install OmniQuant as an app"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                  Install App
+                </button>
+              )}
               <button
                 onClick={doScan}
                 disabled={loading}

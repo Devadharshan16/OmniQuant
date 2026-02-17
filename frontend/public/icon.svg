@@ -1,0 +1,23 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#111827" rx="80"/>
+  
+  <!-- Outer cyan circle -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#06b6d4" stroke-width="12"/>
+  
+  <!-- Inner elements - representing data/arbitrage -->
+  <circle cx="256" cy="180" r="20" fill="#06b6d4"/>
+  <circle cx="320" cy="280" r="20" fill="#06b6d4"/>
+  <circle cx="192" cy="280" r="20" fill="#06b6d4"/>
+  
+  <!-- Connection lines -->
+  <line x1="256" y1="200" x2="320" y2="260" stroke="#06b6d4" stroke-width="8" stroke-linecap="round"/>
+  <line x1="256" y1="200" x2="192" y2="260" stroke="#06b6d4" stroke-width="8" stroke-linecap="round"/>
+  <line x1="192" y1="280" x2="320" y2="280" stroke="#06b6d4" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Center dot -->
+  <circle cx="256" cy="256" r="12" fill="#06b6d4"/>
+  
+  <!-- Text -->
+  <text x="256" y="400" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#06b6d4" text-anchor="middle">OQ</text>
+</svg>
