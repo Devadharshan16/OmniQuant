@@ -152,6 +152,9 @@ class ApplicationState:
         # Performance metrics
         self.total_detection_time_ms: float = 0.0
         self.total_cycles_found: int = 0
+        
+        # Cached real-time data fetcher (expensive to create)
+        self.real_data_fetcher = None
 
 state = ApplicationState()
 
@@ -203,8 +206,11 @@ async def quick_scan(use_real_data: bool = False, symbols: Optional[List[str]] =
         # Generate or fetch market data
         if use_real_data and REAL_DATA_AVAILABLE:
             print("\n🌐 Fetching REAL market data from exchanges...")
-            fetcher = RealMarketDataFetcher()
-            raw_data = fetcher.fetch_real_prices(symbols)
+            # Reuse cached fetcher instance (much faster!)
+            if state.real_data_fetcher is None:
+                print("   Initializing exchange connections (first time only)...")
+                state.real_data_fetcher = RealMarketDataFetcher()
+            raw_data = state.real_data_fetcher.fetch_real_prices(symbols)
             data_source = "Real Exchanges"
         elif use_real_data and not REAL_DATA_AVAILABLE:
             return {

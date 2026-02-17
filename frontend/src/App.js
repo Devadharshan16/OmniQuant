@@ -136,7 +136,7 @@ function App() {
                     : 'bg-cyan-600 hover:bg-cyan-700 shadow-lg hover:shadow-cyan-500/50'
                 }`}
               >
-                {loading ? 'Scanning...' : 'Scan Markets'}
+                {loading ? '🌐 Fetching Real-Time Data...' : 'Scan Markets'}
               </button>
             </div>
           </div>
