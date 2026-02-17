@@ -98,6 +98,7 @@ function OpportunityCard({ opportunity, rank }) {
           label="Risk Level" 
           value={opportunity.risk_level}
           className={getRiskColorClass(opportunity.risk_level)}
+          isPill
         />
         {opportunity.monte_carlo && (
           <MetricItem 
@@ -144,11 +145,15 @@ function OpportunityCard({ opportunity, rank }) {
   );
 }
 
-function MetricItem({ label, value, className = '' }) {
+function MetricItem({ label, value, className = '', isPill = false }) {
   return (
     <div>
       <div className="text-xs text-gray-400">{label}</div>
-      <div className={`font-semibold ${className}`}>{value}</div>
+      {isPill ? (
+        <span className={`risk-pill ${className} mt-1`}>{value}</span>
+      ) : (
+        <div className={`font-semibold ${className}`}>{value}</div>
+      )}
     </div>
   );
 }

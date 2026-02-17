@@ -114,32 +114,55 @@
   box-shadow: 0 12px 40px var(--shadow-cyan);
 }
 
+/* --- Risk Pill Base --- */
+.risk-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid;
+  transition: box-shadow 0.25s ease;
+}
+
 /* --- Risk Level Colors --- */
 .risk-very-low {
   color: #34d399;
   background: rgba(52, 211, 153, 0.12);
-  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-color: rgba(52, 211, 153, 0.25);
 }
+.risk-very-low:hover { box-shadow: 0 0 12px rgba(52, 211, 153, 0.2); }
+
 .risk-low {
   color: #60a5fa;
   background: rgba(96, 165, 250, 0.12);
-  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-color: rgba(96, 165, 250, 0.25);
 }
+.risk-low:hover { box-shadow: 0 0 12px rgba(96, 165, 250, 0.2); }
+
 .risk-moderate {
   color: #fbbf24;
   background: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-color: rgba(251, 191, 36, 0.25);
 }
+.risk-moderate:hover { box-shadow: 0 0 12px rgba(251, 191, 36, 0.2); }
+
 .risk-high {
   color: #f87171;
   background: rgba(248, 113, 113, 0.12);
-  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-color: rgba(248, 113, 113, 0.25);
 }
+.risk-high:hover { box-shadow: 0 0 12px rgba(248, 113, 113, 0.2); }
+
 .risk-very-high {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.3);
 }
+.risk-very-high:hover { box-shadow: 0 0 12px rgba(239, 68, 68, 0.25); }
 
 /* --- Opportunity Cards --- */
 .opportunity-card {
@@ -176,12 +199,14 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.2rem 0.7rem;
+  padding: 0.25rem 0.85rem;
   border-radius: 9999px;
   font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.025em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  border: 1px solid;
+  transition: box-shadow 0.25s ease;
 }
 
 /* --- Path Display --- */
