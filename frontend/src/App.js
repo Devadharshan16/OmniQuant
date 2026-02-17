@@ -3,7 +3,6 @@ import './App.css';
 import OpportunityList from './components/OpportunityList';
 import RiskPanel from './components/RiskPanel';
 import MetricsPanel from './components/MetricsPanel';
-import DisclaimerBanner from './components/DisclaimerBanner';
 import ConnectionStatus from './components/ConnectionStatus';
 import { API_ENDPOINTS } from './config';
 
@@ -98,7 +97,6 @@ function App() {
 
   return (
     <div className="App min-h-screen bg-gray-900 text-gray-100">
-      <DisclaimerBanner />
       
       <header className="bg-gray-800 shadow-lg border-b border-cyan-500">
         <div className="max-w-7xl mx-auto px-4 py-6">
@@ -189,17 +187,6 @@ function App() {
           </div>
         </div>
       </main>
-
-      <footer className="bg-gray-800 border-t border-gray-700 mt-12 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-400">
-          <p className="text-sm">
-            Built for MIT/IIT Hackathon - Quantitative Finance Track
-          </p>
-          <p className="text-xs mt-2">
-            Research tool. No trades executed. Not financial advice.
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }
