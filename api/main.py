@@ -12,10 +12,13 @@ import uvicorn
 import numpy as np
 import time
 import os
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Try to load environment variables (optional)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("⚠️ python-dotenv not installed, using system environment variables only")
 
 # Import OmniQuant modules
 import sys
@@ -77,7 +80,7 @@ class ScanRequest(BaseModel):
     capital: float = 1000.0
     max_cycles: int = 10
     run_monte_carlo: bool = True
-    mc_simulations: int = 500
+    mc_simulations: int = 100  # Reduced from 500 for faster scanning
 
 
 class OpportunityResponse(BaseModel):
@@ -135,7 +138,7 @@ class ApplicationState:
         self.order_book_sim = OrderBookSimulator(depth=5)
         self.slippage_model = AdvancedSlippageModel()
         self.impact_model = MarketImpactModel()
-        self.monte_carlo = MonteCarloSimulator(n_simulations=500)
+        self.monte_carlo = MonteCarloSimulator(n_simulations=100)  # Reduced for speed
         self.risk_engine = RiskEngine()
         self.stress_test_engine = StressTestEngine()
         self.persistence_tracker = PersistenceTracker()
@@ -182,13 +185,14 @@ async def health_check():
 
 
 @app.post("/quick_scan", response_model=Dict[str, Any])
-async def quick_scan(use_real_data: bool = False, symbols: Optional[List[str]] = None):
+async def quick_scan(use_real_data: bool = False, symbols: Optional[List[str]] = None, quick_mode: bool = False):
     """
     Quick scan endpoint that generates market data internally
     
     Args:
         use_real_data: If True, fetch real-time prices from exchanges
         symbols: Optional list of trading pairs (e.g., ['BTC/USDT', 'ETH/USDT'])
+        quick_mode: If True, skip Monte Carlo simulations for ultra-fast scan
     
     Returns:
         Arbitrage opportunities with full risk analysis
@@ -229,13 +233,13 @@ async def quick_scan(use_real_data: bool = False, symbols: Optional[List[str]] =
             for pair in raw_data
         ]
         
-        # Create scan request
+        # Create scan request with optimized settings
         scan_request = ScanRequest(
             market_data=market_data,
             capital=1000.0,
             max_cycles=10,
-            run_monte_carlo=True,
-            mc_simulations=500
+            run_monte_carlo=not quick_mode,  # Skip Monte Carlo in quick mode
+            mc_simulations=50 if not quick_mode else 0  # Even fewer simulations
         )
         
         # Perform scan
