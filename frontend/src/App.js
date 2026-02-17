@@ -46,10 +46,10 @@ function App() {
     }
     
     try {
-      // Always use simulated data (fast and reliable)
-      const apiUrl = `${API_ENDPOINTS.QUICK_SCAN}?use_real_data=false`;
+      // Fetch REAL-TIME data from cryptocurrency exchanges
+      const apiUrl = `${API_ENDPOINTS.QUICK_SCAN}?use_real_data=true`;
       if (!silentRefresh) {
-        console.log('Scanning with API:', apiUrl);
+        console.log('🌐 Fetching real-time data from exchanges:', apiUrl);
       }
       
       const response = await fetch(apiUrl, {

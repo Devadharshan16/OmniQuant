@@ -27,12 +27,13 @@ class RealMarketDataFetcher:
         print("🌐 Initializing real-time exchange connections...")
         
         # Initialize exchanges (NO API KEYS NEEDED for public data)
+        # Reduced timeout to 5s for faster response
         self.exchanges = {}
         
         try:
             self.exchanges['binance'] = ccxt.binance({
                 'enableRateLimit': enable_rate_limit,
-                'timeout': 10000
+                'timeout': 5000  # 5 seconds
             })
             print("  ✓ Connected to Binance")
         except Exception as e:
@@ -41,7 +42,7 @@ class RealMarketDataFetcher:
         try:
             self.exchanges['coinbase'] = ccxt.coinbase({
                 'enableRateLimit': enable_rate_limit,
-                'timeout': 10000
+                'timeout': 5000  # 5 seconds
             })
             print("  ✓ Connected to Coinbase")
         except Exception as e:
@@ -50,7 +51,7 @@ class RealMarketDataFetcher:
         try:
             self.exchanges['kraken'] = ccxt.kraken({
                 'enableRateLimit': enable_rate_limit,
-                'timeout': 10000
+                'timeout': 5000  # 5 seconds
             })
             print("  ✓ Connected to Kraken")
         except Exception as e:
@@ -59,7 +60,7 @@ class RealMarketDataFetcher:
         try:
             self.exchanges['kucoin'] = ccxt.kucoin({
                 'enableRateLimit': enable_rate_limit,
-                'timeout': 10000
+                'timeout': 5000  # 5 seconds
             })
             print("  ✓ Connected to KuCoin")
         except Exception as e:
@@ -82,21 +83,25 @@ class RealMarketDataFetcher:
             List of dictionaries containing real trading pair data
         """
         if symbols is None:
-            # Default major trading pairs
+            # Reduced to 4 major pairs for speed (was 6)
             symbols = [
-                'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 
-                'SOL/USDT', 'XRP/USDT', 'ADA/USDT'
+                'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'SOL/USDT'
             ]
         
         print(f"📊 Fetching real-time prices for {len(symbols)} pairs from {len(self.exchanges)} exchanges...")
         
         pairs = []
         fetch_count = 0
+        max_fetches = 12  # Limit total fetches for speed
         
         for exchange_name, exchange in self.exchanges.items():
             for symbol in symbols:
+                if fetch_count >= max_fetches:
+                    print(f"  ⚡ Speed limit: stopping at {fetch_count} fetches")
+                    break
+                    
                 try:
-                    # Fetch REAL ticker data from exchange
+                    # Fetch REAL ticker data from exchange with timeout
                     ticker = exchange.fetch_ticker(symbol)
                     
                     if not ticker or 'last' not in ticker or ticker['last'] is None:
@@ -123,7 +128,8 @@ class RealMarketDataFetcher:
                         'exchange': exchange_name,
                         'timestamp': ticker.get('timestamp', int(time.time() * 1000)),
                         'symbol': symbol,
-                        'is_real': True
+                        'is_real': True,
+                        'volatility': 0.015  # Typical crypto volatility
                     })
                     
                     # Reverse pair (e.g., USDT -> BTC)
@@ -140,14 +146,25 @@ class RealMarketDataFetcher:
                         'exchange': exchange_name,
                         'timestamp': ticker.get('timestamp', int(time.time() * 1000)),
                         'symbol': f"{to_token}/{from_token}",
-                        'is_real': True
+                        'is_real': True,
+                        'volatility': 0.015
                     })
                     
                     fetch_count += 1
-                    print(f"  ✓ {exchange_name:12} {symbol:12} ${last_price:>12,.2f}  Vol: ${ticker.get('quoteVolume', 0):>15,.0f}")
+                    print(f"  ✓ {exchange_name:12} {symbol:12} ${last_price:>12,.2f}")
                     
                 except ccxt.NetworkError as e:
-                    print(f"  ⚠ Network error fetching {symbol} from {exchange_name}: {e}")
+                    print(f"  ⚠ Network error {symbol} from {exchange_name}")
+                    continue
+                except ccxt.RequestTimeout as e:
+                    print(f"  ⏱ Timeout {symbol} from {exchange_name}")
+                    continue
+                except Exception as e:
+                    print(f"  ⚠ Error {symbol} from {exchange_name}: {str(e)[:50]}")
+                    continue
+            
+            if fetch_count >= max_fetches:
+                break
                     continue
                 except ccxt.ExchangeError as e:
                     print(f"  ⚠ Exchange error fetching {symbol} from {exchange_name}: {e}")
