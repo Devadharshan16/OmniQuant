@@ -25,6 +25,26 @@ function OpportunityList({ opportunities, loading }) {
         Detected Opportunities ({opportunities.length})
       </h2>
       
+      {/* Summary */}
+      {(() => {
+        const profitable = opportunities.filter(o => o.is_profitable || o.expected_return > 0).length;
+        const nearProf = opportunities.length - profitable;
+        return (
+          <div className="flex gap-4 text-sm mb-2">
+            {profitable > 0 && (
+              <span className="bg-green-900/40 text-green-400 px-3 py-1 rounded-full">
+                {profitable} Profitable
+              </span>
+            )}
+            {nearProf > 0 && (
+              <span className="bg-yellow-900/40 text-yellow-400 px-3 py-1 rounded-full">
+                {nearProf} Near-Profitable
+              </span>
+            )}
+          </div>
+        );
+      })()}
+      
       {opportunities.map((opp, index) => (
         <OpportunityCard key={opp.id || index} opportunity={opp} rank={index + 1} />
       ))}
@@ -38,11 +58,16 @@ function OpportunityCard({ opportunity, rank }) {
     return `risk-${level}`;
   };
 
+  const isProfitable = opportunity.is_profitable || opportunity.expected_return > 0;
+  const returnPct = (opportunity.expected_return * 100).toFixed(3);
+  const returnColor = isProfitable ? 'text-green-400' : 'text-yellow-400';
+  const borderColor = isProfitable ? 'border-green-500/30' : 'border-yellow-500/20';
+
   return (
-    <div className="opportunity-card">
+    <div className={`opportunity-card ${borderColor}`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center space-x-3">
-          <div className="bg-cyan-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">
+          <div className={`${isProfitable ? 'bg-green-600' : 'bg-yellow-600'} text-white rounded-full w-8 h-8 flex items-center justify-center font-bold`}>
             {rank}
           </div>
           <div>
@@ -50,13 +75,16 @@ function OpportunityCard({ opportunity, rank }) {
               {opportunity.path.join(' → ')}
             </div>
             <div className="text-xs text-gray-400 mt-1">
-              {opportunity.path_length} hops
+              {opportunity.path_length} hops •{' '}
+              <span className={isProfitable ? 'text-green-400' : 'text-yellow-400'}>
+                {isProfitable ? 'Profitable' : 'Near-Profitable'}
+              </span>
             </div>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-green-400">
-            {(opportunity.expected_return * 100).toFixed(3)}%
+          <div className={`text-2xl font-bold ${returnColor}`}>
+            {returnPct}%
           </div>
           <div className="text-xs text-gray-400">Expected Return</div>
         </div>

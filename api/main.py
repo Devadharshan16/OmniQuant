@@ -655,7 +655,7 @@ def _scan_with_python_fallback(request: ScanRequest) -> List[Dict[str, Any]]:
                 # Check if we completed a cycle back to start
                 if next_token == start and len(path) >= 3:
                     raw_profit = new_mult - 1.0
-                    if raw_profit > 0.0001:  # At least 0.01% profit
+                    if raw_profit > -0.005:  # Show opportunities down to -0.5% (near-profitable)
                         # Normalize cycle for dedup
                         cycle_tokens = tuple(new_path[:-1])
                         min_idx = cycle_tokens.index(min(cycle_tokens))
@@ -693,20 +693,23 @@ def _scan_with_python_fallback(request: ScanRequest) -> List[Dict[str, Any]]:
                 'raw_profit': round(cycle['raw_profit'], 8),
                 'expected_return': round(cycle['raw_profit'] * 0.95, 8),  # 5% slippage estimate
                 'path_length': len(cycle['path']) - 1,
-                'detection_time_ms': round(detection_time, 2)
+                'detection_time_ms': round(detection_time, 2),
+                'is_profitable': cycle['raw_profit'] > 0
             })
     
     # Sort by profit descending (deterministic)
     opportunities.sort(key=lambda x: -x['raw_profit'])
     opportunities = opportunities[:request.max_cycles]
     
-    print(f"  Found {len(opportunities)} real arbitrage opportunities")
+    print(f"  Found {len(opportunities)} arbitrage opportunities")
     if opportunities:
+        profitable = [o for o in opportunities if o.get('is_profitable')]
         best = opportunities[0]
         path_str = ' -> '.join(best['path'])
         print(f"  Best: {path_str} ({best['raw_profit']*100:.4f}%)")
+        print(f"  Profitable: {len(profitable)}/{len(opportunities)}")
     else:
-        print(f"  No profitable cycles found (markets are efficient)")
+        print(f"  No cycles found in market data")
     
     return opportunities
 
