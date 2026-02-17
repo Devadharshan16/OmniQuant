@@ -24,7 +24,7 @@ class RealMarketDataFetcher:
         Args:
             enable_rate_limit: Automatically throttle requests to respect exchange limits
         """
-        print("🌐 Initializing real-time exchange connections...")
+        print("Initializing real-time exchange connections...")
         
         # Initialize exchanges (NO API KEYS NEEDED for public data)
         # Reduced timeout to 5s for faster response
@@ -35,41 +35,41 @@ class RealMarketDataFetcher:
                 'enableRateLimit': enable_rate_limit,
                 'timeout': 5000  # 5 seconds
             })
-            print("  ✓ Connected to Binance")
+            print("  [OK] Connected to Binance")
         except Exception as e:
-            print(f"  ⚠ Binance unavailable: {e}")
+            print(f"  [WARN] Binance unavailable: {e}")
         
         try:
             self.exchanges['coinbase'] = ccxt.coinbase({
                 'enableRateLimit': enable_rate_limit,
                 'timeout': 5000  # 5 seconds
             })
-            print("  ✓ Connected to Coinbase")
+            print("  [OK] Connected to Coinbase")
         except Exception as e:
-            print(f"  ⚠ Coinbase unavailable: {e}")
+            print(f"  [WARN] Coinbase unavailable: {e}")
         
         try:
             self.exchanges['kraken'] = ccxt.kraken({
                 'enableRateLimit': enable_rate_limit,
                 'timeout': 5000  # 5 seconds
             })
-            print("  ✓ Connected to Kraken")
+            print("  [OK] Connected to Kraken")
         except Exception as e:
-            print(f"  ⚠ Kraken unavailable: {e}")
+            print(f"  [WARN] Kraken unavailable: {e}")
         
         try:
             self.exchanges['kucoin'] = ccxt.kucoin({
                 'enableRateLimit': enable_rate_limit,
                 'timeout': 5000  # 5 seconds
             })
-            print("  ✓ Connected to KuCoin")
+            print("  [OK] Connected to KuCoin")
         except Exception as e:
-            print(f"  ⚠ KuCoin unavailable: {e}")
+            print(f"  [WARN] KuCoin unavailable: {e}")
         
         if not self.exchanges:
             raise Exception("Could not connect to any exchanges")
         
-        print(f"✓ Connected to {len(self.exchanges)} exchanges\n")
+        print(f"[OK] Connected to {len(self.exchanges)} exchanges\n")
     
     def fetch_real_prices(self, symbols: Optional[List[str]] = None) -> List[Dict]:
         """
@@ -89,7 +89,7 @@ class RealMarketDataFetcher:
                 'ETH/BTC', 'SOL/ETH'
             ]
         
-        print(f"📊 Fetching real-time prices for {len(symbols)} pairs from {len(self.exchanges)} exchanges...")
+        print(f"[FETCH] Fetching real-time prices for {len(symbols)} pairs from {len(self.exchanges)} exchanges...")
         
         pairs = []
         fetch_count = 0
@@ -98,7 +98,7 @@ class RealMarketDataFetcher:
         for exchange_name, exchange in self.exchanges.items():
             for symbol in symbols:
                 if fetch_count >= max_fetches:
-                    print(f"  ⚡ Speed limit: stopping at {fetch_count} fetches")
+                    print(f"  [SPEED] Speed limit: stopping at {fetch_count} fetches")
                     break
                     
                 try:
@@ -152,23 +152,23 @@ class RealMarketDataFetcher:
                     })
                     
                     fetch_count += 1
-                    print(f"  ✓ {exchange_name:12} {symbol:12} ${last_price:>12,.2f}")
+                    print(f"  [OK] {exchange_name:12} {symbol:12} ${last_price:>12,.2f}")
                     
                 except ccxt.NetworkError as e:
-                    print(f"  ⚠ Network error {symbol} from {exchange_name}")
+                    print(f"  [WARN] Network error {symbol} from {exchange_name}")
                     continue
                 except ccxt.RequestTimeout as e:
-                    print(f"  ⏱ Timeout {symbol} from {exchange_name}")
+                    print(f"  [TIMEOUT] Timeout {symbol} from {exchange_name}")
                     continue
                 except Exception as e:
-                    print(f"  ⚠ Error {symbol} from {exchange_name}: {str(e)[:50]}")
+                    print(f"  [WARN] Error {symbol} from {exchange_name}: {str(e)[:50]}")
                     continue
             
             if fetch_count >= max_fetches:
                 break
         
-        print(f"\n✓ Successfully fetched {fetch_count} real prices")
-        print(f"✓ Generated {len(pairs)} trading pairs (including reverse pairs)\n")
+        print(f"\n[OK] Successfully fetched {fetch_count} real prices")
+        print(f"[OK] Generated {len(pairs)} trading pairs (including reverse pairs)\n")
         
         return pairs
     

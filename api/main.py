@@ -18,11 +18,14 @@ try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    print("⚠️ python-dotenv not installed, using system environment variables only")
+    print("[WARN] python-dotenv not installed, using system environment variables only")
 
 # Import OmniQuant modules
 import sys
-sys.path.append('..')
+import os
+
+# Add project root to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Environment configuration
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
@@ -47,16 +50,16 @@ try:
     CPP_AVAILABLE = True
 except ImportError:
     CPP_AVAILABLE = False
-    print("⚠️ Warning: C++ module not available. Using Python fallback.")
+    print("[WARN] C++ module not available. Using Python fallback.")
 
 # Try to import real market data fetcher
 try:
     from api.real_market_data import RealMarketDataFetcher
     REAL_DATA_AVAILABLE = True
-    print("✓ Real-time market data fetcher available")
+    print("[OK] Real-time market data fetcher available")
 except ImportError:
     REAL_DATA_AVAILABLE = False
-    print("⚠️ Warning: Real-time data fetcher not available. Install with: pip install ccxt")
+    print("[WARN] Real-time data fetcher not available. Install with: pip install ccxt")
 
 
 # ============================================================================
@@ -219,7 +222,7 @@ async def quick_scan(use_real_data: bool = False, symbols: Optional[List[str]] =
                 raw_data = state.cached_real_market_data
                 data_source = "Real Exchanges (Cached Shared)"
             else:
-                print("\n🌐 Fetching REAL market data from exchanges...")
+                print("\n[FETCH] Fetching REAL market data from exchanges...")
                 # Reuse cached fetcher instance (much faster!)
                 if state.real_data_fetcher is None:
                     print("   Initializing exchange connections (first time only)...")
@@ -237,11 +240,11 @@ async def quick_scan(use_real_data: bool = False, symbols: Optional[List[str]] =
                 "data_source": "unavailable"
             }
         else:
-            print("\n🎲 Generating simulated market data...")
+            print("\n[SIM] Generating simulated market data...")
             raw_data = _generate_simulated_market_data()
             data_source = "Simulated"
         
-        print(f"✓ Loaded {len(raw_data)} trading pairs from {data_source}")
+        print(f"[OK] Loaded {len(raw_data)} trading pairs from {data_source}")
         
         # Convert to MarketPair format
         market_data = [
@@ -400,7 +403,7 @@ async def scan_arbitrage(request: ScanRequest):
             "opportunities_found": len(enhanced_opportunities),
             "opportunities": ranked,
             "best_opportunity": ranked[0] if ranked else None,
-            "disclaimer": "⚠️ All results are theoretical. No trades executed."
+            "disclaimer": "[WARN] All results are theoretical. No trades executed."
         }
     
     except Exception as e:
@@ -793,9 +796,9 @@ async def _enhance_opportunity(opp: Dict[str, Any], request: ScanRequest) -> Dic
 # ============================================================================
 
 if __name__ == "__main__":
-    print("🚀 Starting OmniQuant v2 Server...")
+    print("[INFO] Starting OmniQuant v2 Server...")
     print("=" * 60)
-    print("⚠️  MANDATORY DISCLAIMER:")
+    print("WARNING: MANDATORY DISCLAIMER:")
     print("OmniQuant is a research and educational arbitrage detection simulator.")
     print("All opportunities shown are theoretical.")
     print("No trades are executed. Not financial advice.")
