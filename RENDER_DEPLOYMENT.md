@@ -99,11 +99,19 @@ git push -u origin main
    Publish Directory: frontend/build
    ```
 
-5. **Add Environment Variable**:
+5. **⚠️ CRITICAL: Add Environment Variable**:
+   Click "Advanced" → "Add Environment Variable"
+   
+   **Add this REQUIRED variable:**
    ```
    REACT_APP_API_URL = https://omniquant-api.onrender.com
    ```
-   *(Use the backend URL from Step 2)*
+   
+   ⚠️ **IMPORTANT:** 
+   - Replace with YOUR actual backend URL from Step 2
+   - This MUST be set or frontend won't connect to backend
+   - No trailing slash
+   - Must be HTTPS
 
 6. **Auto-Deploy**: Enable "Auto-Deploy" for automatic updates
 
@@ -227,22 +235,56 @@ git push origin main
 3. Module not found → Check requirements.txt has all dependencies
 ```
 
-### **Frontend can't reach backend:**
+### **Frontend can't reach backend / Scanning doesn't work:**
 ```bash
-# Check:
-1. REACT_APP_API_URL is set correctly
-2. CORS_ORIGINS includes frontend URL
-3. Backend is running (check health endpoint)
+# MOST COMMON ISSUE: REACT_APP_API_URL not set correctly
+
+Step 1: Check browser console (F12)
+- Look for: "OmniQuant API Configuration: API Base URL: ..."
+- If it shows "http://localhost:8000" → Environment variable NOT SET
+
+Step 2: Fix the environment variable
+- Go to: Render Dashboard → omniquant-frontend → Environment
+- Add/Update: REACT_APP_API_URL = https://omniquant-api-XXXX.onrender.com
+- Use YOUR actual backend URL (copy from backend service)
+- ⚠️ NO trailing slash!
+
+Step 3: Rebuild frontend
+- Render Dashboard → omniquant-frontend
+- Click "Manual Deploy" → "Clear build cache & deploy"
+- Wait 3-5 minutes for rebuild
+
+Step 4: Verify
+- Open frontend URL
+- Check header for "API Connected" green indicator
+- Click "Scan Markets" - should work in ~5 seconds
 ```
 
-### **Real-time data not working:**
+### **Backend is sleeping (free tier):**
 ```bash
-# Set environment variable:
-USE_REAL_DATA=true
+# Symptoms:
+- First scan takes 30-60 seconds
+- "API Disconnected" shows in red
 
-# Note: May fail if exchanges block Render IPs
-# Solution: Use simulated data (default)
+# This is normal for free tier
+# Backend wakes up on first request
+# Subsequent scans are fast
+
+# Keep-alive solution (optional):
+- Use cron-job.org to ping /health every 14 minutes
+- Prevents sleep (uses your 750 free hours)
 ```
+
+### **Real-time data removed:**
+```bash
+# NOTE: Real-time data checkbox has been REMOVED
+# App now ALWAYS uses simulated data for:
+# ✅ Faster scanning (~5 seconds vs 30+ seconds)
+# ✅ More reliable (no exchange API dependencies)  
+# ✅ Always finds opportunities (better for demos)
+# ✅ No rate limits or network issues
+
+````
 
 ### **Build fails:**
 ```bash

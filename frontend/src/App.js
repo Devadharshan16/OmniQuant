@@ -4,6 +4,7 @@ import OpportunityList from './components/OpportunityList';
 import RiskPanel from './components/RiskPanel';
 import MetricsPanel from './components/MetricsPanel';
 import DisclaimerBanner from './components/DisclaimerBanner';
+import ConnectionStatus from './components/ConnectionStatus';
 import { API_ENDPOINTS } from './config';
 
 function App() {
@@ -11,8 +12,6 @@ function App() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [useRealData, setUseRealData] = useState(false);
-  const [dataSource, setDataSource] = useState('Simulated');
 
   useEffect(() => {
     fetchMetrics();
@@ -38,26 +37,34 @@ function App() {
     setError(null);
     
     try {
-      // Use new quick_scan endpoint that handles data generation
-      const response = await fetch(
-        `${API_ENDPOINTS.QUICK_SCAN}?use_real_data=${useRealData}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+      // Always use simulated data (fast and reliable)
+      const apiUrl = `${API_ENDPOINTS.QUICK_SCAN}?use_real_data=false`;
+      console.log('Scanning with API:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
-      );
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
 
       const data = await response.json();
+      console.log('Scan response:', data);
       
       if (data.success) {
         setOpportunities(data.opportunities || []);
-        setDataSource(data.data_source);
         await fetchMetrics();
       } else {
         setError(data.error || 'Scan failed');
       }
     } catch (err) {
-      setError('Failed to scan: ' + err.message);
+      console.error('Scan error:', err);
+      setError(`Failed to scan: ${err.message}. Check if backend is running at ${API_ENDPOINTS.ROOT}`);
     } finally {
       setLoading(false);
     }
@@ -77,28 +84,9 @@ function App() {
               <p className="text-gray-400 mt-1">
                 Quantitative Market Inefficiency Research Platform
               </p>
+              <ConnectionStatus />
             </div>
             <div className="flex items-center gap-4">
-              {/* Data Source Toggle */}
-              <div className="flex flex-col items-end gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-sm text-gray-300">Real-Time Data</span>
-                  <input
-                    type="checkbox"
-                    checked={useRealData}
-                    onChange={(e) => setUseRealData(e.target.checked)}
-                    className="w-4 h-4 rounded"
-                  />
-                </label>
-                <span className={`text-xs px-2 py-1 rounded ${
-                  dataSource === 'Real Exchanges' 
-                    ? 'bg-green-900/50 text-green-300' 
-                    : 'bg-yellow-900/50 text-yellow-300'
-                }`}>
-                  {dataSource}
-                </span>
-              </div>
-              
               {/* Scan Button */}
               <button
                 onClick={handleScan}
