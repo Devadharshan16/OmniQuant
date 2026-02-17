@@ -18,32 +18,35 @@ function App() {
   });
   const [hasScanned, setHasScanned] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const timerRef = useRef(null);
   const refreshRef = useRef(null);
 
   // PWA Install Prompt
   useEffect(() => {
+    // Check if already installed
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || 
+                      window.navigator.standalone === true;
+    setIsStandalone(standalone);
+    
+    if (standalone) {
+      console.log('[PWA] Already running as installed app');
+      return;
+    }
+
     const handleBeforeInstallPrompt = (e) => {
-      console.log('[PWA] beforeinstallprompt event fired');
+      console.log('[PWA] beforeinstallprompt event fired - native prompt available!');
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowInstallButton(true);
     };
 
     const handleAppInstalled = () => {
-      console.log('[PWA] App was installed');
-      setShowInstallButton(false);
+      console.log('[PWA] App was installed successfully!');
+      setIsStandalone(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
-
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('[PWA] Already running as installed app');
-      setShowInstallButton(false);
-    }
 
     // Debug: Check PWA requirements
     if ('serviceWorker' in navigator) {
@@ -59,19 +62,40 @@ function App() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      // If no deferred prompt, show instructions
-      alert('To install:\n\n• Chrome Desktop: Click ⊕ icon in address bar\n• Chrome Mobile: Menu → "Add to Home Screen"\n• Safari iOS: Share → "Add to Home Screen"');
-      return;
+    if (deferredPrompt) {
+      // Native install prompt is available - use it!
+      console.log('[PWA] Triggering native install prompt');
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`[PWA] User ${outcome === 'accepted' ? 'accepted' : 'dismissed'} install`);
+      
+      if (outcome === 'accepted') {
+        setIsStandalone(true);
+      }
+      setDeferredPrompt(null);
+    } else {
+      // Fallback: show browser-specific instructions
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      
+      let message = 'To install this app:\n\n';
+      
+      if (isIOS) {
+        message += '1. Tap the Share button (square with arrow)\n';
+        message += '2. Scroll down and tap "Add to Home Screen"\n';
+        message += '3. Tap "Add" in the top right';
+      } else if (isAndroid) {
+        message += '1. Tap the menu (⋮) in the top right\n';
+        message += '2. Tap "Add to Home screen" or "Install app"\n';
+        message += '3. Tap "Install" or "Add"';
+      } else {
+        message += '• Chrome: Click the install icon (⊕) in the address bar\n';
+        message += '• Edge: Click the app icon in the address bar\n';
+        message += '• Or use browser menu → "Install OmniQuant"';
+      }
+      
+      alert(message);
     }
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    console.log(`[PWA] User ${outcome === 'accepted' ? 'accepted' : 'dismissed'} install`);
-    
-    setDeferredPrompt(null);
-    setShowInstallButton(false);
   };
 
   // Fetch metrics
@@ -165,18 +189,19 @@ function App() {
               </p>
               <ConnectionStatus />
             </div>
-            <div className="flex items-center gap-4">
-              {/* Always show install button on production */}
-              {(showInstallButton || (window.location.hostname !== 'localhost' && !window.matchMedia('(display-mode: standalone)').matches)) && (
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Show install button if not running as standalone app and not on localhost */}
+              {!isStandalone && window.location.hostname !== 'localhost' && (
                 <button
                   onClick={handleInstallClick}
-                  className="px-4 py-2 rounded-lg font-semibold bg-green-600 hover:bg-green-700 shadow-lg transition-all flex items-center gap-2 text-sm"
+                  className="px-3 sm:px-4 py-2 rounded-lg font-semibold bg-green-600 hover:bg-green-700 shadow-lg transition-all flex items-center gap-2 text-xs sm:text-sm"
                   title="Install OmniQuant as an app"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                   </svg>
-                  Install App
+                  <span className="hidden sm:inline">Install App</span>
+                  <span className="sm:hidden">Install</span>
                 </button>
               )}
               <button
