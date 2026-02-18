@@ -5,6 +5,7 @@ import RiskPanel from './components/RiskPanel';
 import MetricsPanel from './components/MetricsPanel';
 import ConnectionStatus from './components/ConnectionStatus';
 import PWADebug from './components/PWADebug';
+import MarketImpactCalculator from './components/MarketImpactCalculator';
 import { API_ENDPOINTS } from './config';
 
 function App() {
@@ -352,6 +353,11 @@ function App() {
           <div>
             <RiskPanel opportunities={opportunities} />
           </div>
+        </div>
+
+        {/* Market Impact Calculator Section */}
+        <div className="mt-8">
+          <MarketImpactCalculator theme={theme} />
         </div>
       </main>
 

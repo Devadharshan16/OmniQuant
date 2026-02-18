@@ -526,6 +526,104 @@ async def get_metrics():
     }
 
 
+class MarketImpactRequest(BaseModel):
+    """Request for market impact calculation"""
+    volume: float = Field(description="Trade volume", gt=0)
+    liquidity: float = Field(description="Available liquidity", gt=0)
+    base_price: float = Field(description="Base price before impact", default=100.0, gt=0)
+    k: float = Field(description="Sensitivity constant", default=0.5, gt=0)
+    alpha: float = Field(description="Impact exponent (α > 1 for convex impact)", default=1.5, gt=1.0)
+    volatility: float = Field(description="Market volatility", default=0.01, ge=0)
+
+
+@app.post("/market-impact", response_model=Dict[str, Any])
+async def calculate_market_impact(request: MarketImpactRequest):
+    """
+    Calculate nonlinear market impact using institutional-grade model
+    
+    Formula: impact = k × (volume/liquidity)^α
+    
+    Where:
+    - k = sensitivity constant (default 0.5)
+    - α > 1 = convex impact exponent (default 1.5)
+    
+    This shows institutional understanding of market microstructure.
+    Larger trades have disproportionately larger impact (convex function).
+    """
+    # Create slippage model with custom parameters
+    slippage_model = AdvancedSlippageModel(
+        base_slippage=0.001,
+        impact_coefficient=request.k,
+        impact_exponent=request.alpha
+    )
+    
+    # Calculate slippage
+    slippage_result = slippage_model.calculate_effective_rate(
+        base_rate=request.base_price,
+        volume=request.volume,
+        liquidity=request.liquidity,
+        volatility=request.volatility,
+        direction='buy'
+    )
+    
+    # Calculate raw impact using the formula
+    liquidity_ratio = request.volume / request.liquidity
+    raw_impact = request.k * np.power(liquidity_ratio, request.alpha)
+    impact_bps = raw_impact * 10000  # Convert to basis points
+    
+    # Calculate price after impact
+    impacted_price = request.base_price * (1 + raw_impact)
+    price_increase = impacted_price - request.base_price
+    price_increase_pct = (price_increase / request.base_price) * 100
+    
+    # Generate comparison data for visualization (different volume levels)
+    comparison_points = []
+    volume_levels = np.linspace(request.volume * 0.1, request.volume * 3, 20)
+    
+    for vol in volume_levels:
+        ratio = vol / request.liquidity
+        impact = request.k * np.power(ratio, request.alpha)
+        comparison_points.append({
+            'volume': float(vol),
+            'liquidity_ratio': float(ratio * 100),  # as percentage
+            'impact_pct': float(impact * 100),
+            'price': float(request.base_price * (1 + impact))
+        })
+    
+    return {
+        "success": True,
+        "formula": f"impact = {request.k} × (volume/liquidity)^{request.alpha}",
+        "parameters": {
+            "k": request.k,
+            "alpha": request.alpha,
+            "volume": request.volume,
+            "liquidity": request.liquidity,
+            "base_price": request.base_price,
+            "volatility": request.volatility
+        },
+        "results": {
+            "liquidity_ratio": liquidity_ratio,
+            "liquidity_utilization_pct": liquidity_ratio * 100,
+            "raw_impact": raw_impact,
+            "impact_bps": impact_bps,
+            "impact_pct": raw_impact * 100,
+            "base_price": request.base_price,
+            "impacted_price": impacted_price,
+            "price_increase": price_increase,
+            "price_increase_pct": price_increase_pct,
+            "effective_rate": slippage_result['effective_rate'],
+            "total_slippage_pct": slippage_result['slippage_pct']
+        },
+        "comparison_data": comparison_points,
+        "interpretation": {
+            "convexity": "Convex impact means larger trades have disproportionately higher impact",
+            "institutional_insight": f"With α={request.alpha:.2f}, doubling volume increases impact by {2**request.alpha:.2f}x",
+            "execution_cost": f"Total execution cost: {price_increase_pct:.4f}% above base price"
+        },
+        "timestamp": time.time()
+    }
+
+
 @app.get("/stress-test/{opportunity_id}", response_model=Dict[str, Any])
 async def stress_test_opportunity(opportunity_id: str):
     """Run stress tests on specific opportunity"""

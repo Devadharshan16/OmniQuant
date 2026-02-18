@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
   OPPORTUNITIES: `${API_BASE_URL}/opportunities`,
   ALLOCATE: `${API_BASE_URL}/allocate`,
   STRESS_TEST: (id) => `${API_BASE_URL}/stress-test/${id}`,
+  MARKET_IMPACT: `${API_BASE_URL}/market-impact`,
   ROOT: API_BASE_URL
 };
 
