@@ -59,15 +59,15 @@ function LatencySensitivityAnalysis({ theme }) {
   };
 
   return (
-    <div className={`${bgClass} ${textClass} rounded-lg shadow-lg p-6 border ${borderClass}`}>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+    <div className={`${bgClass} ${textClass} rounded-lg shadow-lg p-4 sm:p-6 border ${borderClass}`}>
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold mb-2 flex flex-wrap items-center gap-2">
           ⚡ Latency Sensitivity Analysis
-          <span className="text-sm font-normal px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+          <span className="text-xs sm:text-sm font-normal px-2 sm:px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white">
             ELITE
           </span>
         </h2>
-        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-3`}>
+        <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-3`}>
           Analyze how arbitrage returns decay with execution latency
         </p>
         <div className={`${isDark ? 'bg-gray-900' : 'bg-purple-50'} border ${isDark ? 'border-gray-700' : 'border-purple-200'} rounded-lg p-4`}>
@@ -80,7 +80,7 @@ function LatencySensitivityAnalysis({ theme }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div>
           <label className="block text-sm font-medium mb-2">
             Base Return (%)
@@ -126,7 +126,7 @@ function LatencySensitivityAnalysis({ theme }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div>
           <label className="block text-sm font-medium mb-2">
             Liquidity ($)
@@ -185,12 +185,12 @@ function LatencySensitivityAnalysis({ theme }) {
       {result && result.half_life_ms && (
         <div className="space-y-4">
           {/* Half-Life Display - ELITE METRIC */}
-          <div className={`${isDark ? 'bg-gradient-to-br from-purple-900/50 to-pink-900/50' : 'bg-gradient-to-br from-purple-100 to-pink-100'} border-2 ${isDark ? 'border-purple-500/50' : 'border-purple-300'} rounded-xl p-6 shadow-xl`}>
+          <div className={`${isDark ? 'bg-gradient-to-br from-purple-900/50 to-pink-900/50' : 'bg-gradient-to-br from-purple-100 to-pink-100'} border-2 ${isDark ? 'border-purple-500/50' : 'border-purple-300'} rounded-xl p-4 sm:p-5 md:p-6 shadow-xl`}>
             <div className="text-center">
-              <div className="text-sm font-semibold mb-2 uppercase tracking-wider opacity-75">
+              <div className="text-xs sm:text-sm font-semibold mb-2 uppercase tracking-wider opacity-75">
                 🔹 Arbitrage Half-Life
               </div>
-              <div className="text-6xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                 {typeof result.half_life_ms === 'number' ? `${result.half_life_ms.toFixed(0)}ms` : result.half_life_ms}
               </div>
               <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
@@ -203,135 +203,29 @@ function LatencySensitivityAnalysis({ theme }) {
           </div>
 
           {/* Key Latency Points */}
-          <div className={`grid grid-cols-3 gap-4 p-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} rounded-lg`}>
+          <div className={`grid grid-cols-3 gap-3 sm:gap-5 p-4 sm:p-5 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} rounded-lg`}>
             <div className="text-center">
-              <div className={`text-3xl font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+              <div className={`text-lg sm:text-xl md:text-2xl font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
                 {result.key_metrics.return_at_0ms.toFixed(3)}%
               </div>
-              <div className="text-xs mt-1">Return at 0ms</div>
-              <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>(Instant)</div>
+              <div className="text-[11px] sm:text-xs mt-1">Return at 0ms</div>
+              <div className={`text-[10px] sm:text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>(Instant)</div>
             </div>
 
             <div className="text-center">
-              <div className={`text-3xl font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+              <div className={`text-lg sm:text-xl md:text-2xl font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
                 {result.key_metrics.return_at_50ms.toFixed(3)}%
               </div>
-              <div className="text-xs mt-1">Return at 50ms</div>
-              <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>(Fast)</div>
+              <div className="text-[11px] sm:text-xs mt-1">Return at 50ms</div>
+              <div className={`text-[10px] sm:text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>(Fast)</div>
             </div>
 
             <div className="text-center">
-              <div className={`text-3xl font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+              <div className={`text-lg sm:text-xl md:text-2xl font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
                 {result.key_metrics.return_at_200ms.toFixed(3)}%
               </div>
-              <div className="text-xs mt-1">Return at 200ms</div>
-              <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>(Slow)</div>
-            </div>
-          </div>
-
-          {/* Decay Curve Visualization */}
-          <div className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} rounded-lg p-4`}>
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              📉 Return Decay Curve
-              <span className="text-xs font-normal opacity-60">
-                (Shows how quickly opportunity disappears)
-              </span>
-            </h3>
-            <div className="max-w-2xl mx-auto">
-              <div className="relative h-64 border-l-2 border-b-2 border-gray-400 pl-8 pb-8">
-                {/* Y-axis label */}
-                <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 -rotate-90 origin-center text-xs font-semibold whitespace-nowrap">
-                  Return (%)
-                </div>
-                
-                {/* Y-axis values */}
-                {result && result.decay_curve && (() => {
-                  const maxReturn = Math.max(...result.decay_curve.map(p => Math.abs(p.return_pct)));
-                  const minReturn = Math.min(...result.decay_curve.map(p => p.return_pct));
-                  return [
-                    { value: maxReturn, pos: 5 },
-                    { value: (maxReturn + minReturn) / 2, pos: 50 },
-                    { value: minReturn, pos: 95 }
-                  ].map((item, i) => (
-                    <div key={i} className="absolute text-xs" style={{ left: '-2rem', top: `${item.pos}%`, transform: 'translateY(-50%)' }}>
-                      {item.value.toFixed(1)}%
-                    </div>
-                  ));
-                })()}
-                
-                {/* X-axis values */}
-                <div className="absolute bottom-0 left-0 text-xs" style={{ marginLeft: '0', marginBottom: '-1.5rem' }}>0ms</div>
-                <div className="absolute bottom-0 left-1/3 text-xs" style={{ transform: 'translateX(-50%)', marginBottom: '-1.5rem' }}>
-                  {result && result.decay_curve && result.decay_curve[Math.floor(result.decay_curve.length / 3)]?.latency_ms}ms
-                </div>
-                <div className="absolute bottom-0 left-2/3 text-xs" style={{ transform: 'translateX(-50%)', marginBottom: '-1.5rem' }}>
-                  {result && result.decay_curve && result.decay_curve[Math.floor(result.decay_curve.length * 2 / 3)]?.latency_ms}ms
-                </div>
-                <div className="absolute bottom-0 right-0 text-xs" style={{ marginBottom: '-1.5rem', transform: 'translateX(0)' }}>
-                  {result && result.decay_curve && result.decay_curve[result.decay_curve.length - 1]?.latency_ms}ms
-                </div>
-                
-                {/* X-axis label */}
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-xs font-semibold whitespace-nowrap" style={{ marginBottom: '-2.5rem' }}>
-                  Latency (milliseconds)
-                </div>
-
-              <svg className="w-full h-full">
-                {/* Draw decay curve */}
-                {result.decay_curve && result.decay_curve.map((point, idx, arr) => {
-                  if (idx === 0) return null;
-                  const prev = arr[idx - 1];
-                  
-                  // X-axis: latency (0 to max)
-                  const maxLatency = Math.max(...arr.map(p => p.latency_ms));
-                  const x1 = ((prev.latency_ms / maxLatency) * 95) + 2;
-                  const x2 = ((point.latency_ms / maxLatency) * 95) + 2;
-                  
-                  // Y-axis: return percentage (inverted, 0 at bottom)
-                  const maxReturn = Math.max(...arr.map(p => Math.abs(p.return_pct)));
-                  const minReturn = Math.min(...arr.map(p => p.return_pct));
-                  const range = maxReturn - minReturn;
-                  const y1 = 95 - (((prev.return_pct - minReturn) / range) * 90);
-                  const y2 = 95 - (((point.return_pct - minReturn) / range) * 90);
-                  
-                  // Color gradient based on profitability
-                  const color = point.is_profitable 
-                    ? (isDark ? '#10b981' : '#059669')  // green
-                    : (isDark ? '#ef4444' : '#dc2626');  // red
-                  
-                  return (
-                    <line
-                      key={idx}
-                      x1={`${x1}%`}
-                      y1={`${y1}%`}
-                      x2={`${x2}%`}
-                      y2={`${y2}%`}
-                      stroke={color}
-                      strokeWidth="3"
-                    />
-                  );
-                })}
-                
-                {/* Zero line */}
-                {result.decay_curve && (() => {
-                  const maxReturn = Math.max(...result.decay_curve.map(p => Math.abs(p.return_pct)));
-                  const minReturn = Math.min(...result.decay_curve.map(p => p.return_pct));
-                  const range = maxReturn - minReturn;
-                  const zeroY = 95 - (((0 - minReturn) / range) * 90);
-                  return (
-                    <line
-                      x1="2%"
-                      y1={`${zeroY}%`}
-                      x2="97%"
-                      y2={`${zeroY}%`}
-                      stroke={isDark ? '#6b7280' : '#9ca3af'}
-                      strokeWidth="1"
-                      strokeDasharray="5,5"
-                    />
-                  );
-                })()}
-              </svg>
-            </div>
+              <div className="text-[11px] sm:text-xs mt-1">Return at 200ms</div>
+              <div className={`text-[10px] sm:text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>(Slow)</div>
             </div>
           </div>
 

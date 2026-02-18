@@ -48,12 +48,12 @@ function MarketImpactCalculator({ theme }) {
   const inputBg = isDark ? 'bg-gray-700' : 'bg-gray-50';
 
   return (
-    <div className={`${bgClass} ${textClass} rounded-lg shadow-lg p-6 border ${borderClass}`}>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">
+    <div className={`${bgClass} ${textClass} rounded-lg shadow-lg p-4 sm:p-6 border ${borderClass}`}>
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">
           🎯 Nonlinear Market Impact Calculator
         </h2>
-        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-3`}>
+        <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-3`}>
           Institutional-grade slippage model with convex impact
         </p>
         <div className={`${isDark ? 'bg-gray-900' : 'bg-blue-50'} border ${isDark ? 'border-gray-700' : 'border-blue-200'} rounded-lg p-4`}>
@@ -74,7 +74,7 @@ function MarketImpactCalculator({ theme }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div>
           <label className="block text-sm font-medium mb-2">
             Trade Volume
@@ -133,7 +133,7 @@ function MarketImpactCalculator({ theme }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div>
           <label className="block text-sm font-medium mb-2">
             k (Sensitivity Constant)
@@ -190,94 +190,34 @@ function MarketImpactCalculator({ theme }) {
       </div>
 
       {result && result.results && (
-        <div className="space-y-4">
-          <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 p-4 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} rounded-lg`}>
+        <div className="space-y-4 sm:space-y-5">
+          <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 p-4 sm:p-5 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} rounded-lg`}>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+              <div className={`text-lg sm:text-xl md:text-2xl font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                 {result.results.impact_pct.toFixed(4)}%
               </div>
-              <div className="text-xs mt-1">Market Impact</div>
+              <div className="text-[11px] sm:text-xs mt-1">Market Impact</div>
             </div>
 
             <div className="text-center">
-              <div className={`text-2xl font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+              <div className={`text-lg sm:text-xl md:text-2xl font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
                 {result.results.impact_bps.toFixed(2)}
               </div>
-              <div className="text-xs mt-1">Basis Points</div>
+              <div className="text-[11px] sm:text-xs mt-1">Basis Points</div>
             </div>
 
             <div className="text-center">
-              <div className={`text-2xl font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+              <div className={`text-lg sm:text-xl md:text-2xl font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
                 ${result.results.impacted_price.toFixed(4)}
               </div>
-              <div className="text-xs mt-1">Effective Price</div>
+              <div className="text-[11px] sm:text-xs mt-1">Effective Price</div>
             </div>
 
             <div className="text-center">
-              <div className={`text-2xl font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+              <div className={`text-lg sm:text-xl md:text-2xl font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
                 +${result.results.price_increase.toFixed(4)}
               </div>
-              <div className="text-xs mt-1">Price Increase</div>
-            </div>
-          </div>
-
-          <div className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} rounded-lg p-4`}>
-            <h3 className="font-semibold mb-3">📊 Impact Curve Visualization</h3>
-            <div className="max-w-2xl mx-auto">
-              <div className="relative h-48 border-l-2 border-b-2 border-gray-400 pl-8 pb-8">
-                {/* Y-axis label */}
-                <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 -rotate-90 origin-center text-xs font-semibold whitespace-nowrap">
-                  Impact (%)
-                </div>
-                
-                {/* Y-axis values */}
-                {result.comparison_data && (() => {
-                  const maxImpact = Math.max(...result.comparison_data.map(p => p.impact_pct));
-                  return [
-                    { value: maxImpact, pos: 5 },
-                    { value: maxImpact / 2, pos: 50 },
-                    { value: 0, pos: 95 }
-                  ].map((item, i) => (
-                    <div key={i} className="absolute text-xs" style={{ left: '-2rem', top: `${item.pos}%`, transform: 'translateY(-50%)' }}>
-                      {item.value.toFixed(2)}%
-                    </div>
-                  ));
-                })()}
-                
-                {/* X-axis values */}
-                <div className="absolute bottom-0 left-0 text-xs" style={{ marginBottom: '-1.5rem' }}>1x</div>
-                <div className="absolute bottom-0 left-1/2 text-xs" style={{ transform: 'translateX(-50%)', marginBottom: '-1.5rem' }}>2x</div>
-                <div className="absolute bottom-0 right-0 text-xs" style={{ marginBottom: '-1.5rem' }}>3x</div>
-                
-                {/* X-axis label */}
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-xs font-semibold whitespace-nowrap" style={{ marginBottom: '-2.5rem' }}>
-                  Volume Multiplier
-                </div>
-
-              <svg className="w-full h-full">
-                {result.comparison_data && result.comparison_data.map((point, idx, arr) => {
-                  if (idx === 0) return null;
-                  const prev = arr[idx - 1];
-                  const x1 = ((idx - 1) / arr.length) * 100;
-                  const x2 = (idx / arr.length) * 100;
-                  const maxImpact = Math.max(...arr.map(p => p.impact_pct));
-                  const y1 = 100 - ((prev.impact_pct / maxImpact) * 90);
-                  const y2 = 100 - ((point.impact_pct / maxImpact) * 90);
-                  
-                  return (
-                    <line
-                      key={idx}
-                      x1={`${x1}%`}
-                      y1={`${y1}%`}
-                      x2={`${x2}%`}
-                      y2={`${y2}%`}
-                      stroke={isDark ? '#60a5fa' : '#2563eb'}
-                      strokeWidth="2"
-                    />
-                  );
-                })}
-              </svg>
-            </div>
+              <div className="text-[11px] sm:text-xs mt-1">Price Increase</div>
             </div>
           </div>
 
