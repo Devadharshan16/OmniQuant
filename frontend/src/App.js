@@ -6,6 +6,7 @@ import MetricsPanel from './components/MetricsPanel';
 import ConnectionStatus from './components/ConnectionStatus';
 import PWADebug from './components/PWADebug';
 import MarketImpactCalculator from './components/MarketImpactCalculator';
+import LatencySensitivityAnalysis from './components/LatencySensitivityAnalysis';
 import { API_ENDPOINTS } from './config';
 
 function App() {
@@ -355,8 +356,9 @@ function App() {
           </div>
         </div>
 
-        {/* Market Impact Calculator Section */}
-        <div className="mt-8">
+        {/* Advanced Analysis Tools Section */}
+        <div className="mt-8 space-y-6">
+          <LatencySensitivityAnalysis theme={theme} />
           <MarketImpactCalculator theme={theme} />
         </div>
       </main>

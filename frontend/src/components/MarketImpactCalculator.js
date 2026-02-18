@@ -223,7 +223,37 @@ function MarketImpactCalculator({ theme }) {
 
           <div className={`${isDark ? 'bg-gray-900' : 'bg-gray-50'} rounded-lg p-4`}>
             <h3 className="font-semibold mb-3">📊 Impact Curve Visualization</h3>
-            <div className="relative h-48 border-l-2 border-b-2 border-gray-400">
+            <div className="max-w-2xl mx-auto">
+              <div className="relative h-48 border-l-2 border-b-2 border-gray-400 pl-8 pb-8">
+                {/* Y-axis label */}
+                <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 -rotate-90 origin-center text-xs font-semibold whitespace-nowrap">
+                  Impact (%)
+                </div>
+                
+                {/* Y-axis values */}
+                {result.comparison_data && (() => {
+                  const maxImpact = Math.max(...result.comparison_data.map(p => p.impact_pct));
+                  return [
+                    { value: maxImpact, pos: 5 },
+                    { value: maxImpact / 2, pos: 50 },
+                    { value: 0, pos: 95 }
+                  ].map((item, i) => (
+                    <div key={i} className="absolute text-xs" style={{ left: '-2rem', top: `${item.pos}%`, transform: 'translateY(-50%)' }}>
+                      {item.value.toFixed(2)}%
+                    </div>
+                  ));
+                })()}
+                
+                {/* X-axis values */}
+                <div className="absolute bottom-0 left-0 text-xs" style={{ marginBottom: '-1.5rem' }}>1x</div>
+                <div className="absolute bottom-0 left-1/2 text-xs" style={{ transform: 'translateX(-50%)', marginBottom: '-1.5rem' }}>2x</div>
+                <div className="absolute bottom-0 right-0 text-xs" style={{ marginBottom: '-1.5rem' }}>3x</div>
+                
+                {/* X-axis label */}
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-xs font-semibold whitespace-nowrap" style={{ marginBottom: '-2.5rem' }}>
+                  Volume Multiplier
+                </div>
+
               <svg className="w-full h-full">
                 {result.comparison_data && result.comparison_data.map((point, idx, arr) => {
                   if (idx === 0) return null;
@@ -247,9 +277,7 @@ function MarketImpactCalculator({ theme }) {
                   );
                 })}
               </svg>
-              <div className="absolute bottom-0 left-0 text-xs">0</div>
-              <div className="absolute bottom-0 right-0 text-xs">3x Volume</div>
-              <div className="absolute top-0 left-0 -ml-8 text-xs">Impact %</div>
+            </div>
             </div>
           </div>
 

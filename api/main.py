@@ -660,6 +660,184 @@ async def stress_test_opportunity(opportunity_id: str):
     }
 
 
+class LatencyAnalysisRequest(BaseModel):
+    """Request for latency sensitivity analysis"""
+    base_return: float = Field(description="Base arbitrage return (e.g., 0.02 for 2%)")
+    path_length: int = Field(description="Number of hops in arbitrage path", default=3, ge=2)
+    liquidity: float = Field(description="Average liquidity per hop", default=50000, gt=0)
+    volatility: float = Field(description="Market volatility", default=0.01, ge=0)
+    fee_per_hop: float = Field(description="Trading fee per hop", default=0.001, ge=0)
+    initial_capital: float = Field(description="Initial capital", default=1000, gt=0)
+
+
+@app.post("/latency-analysis", response_model=Dict[str, Any])
+async def analyze_latency_sensitivity(request: LatencyAnalysisRequest):
+    """
+    🔹 Elite Latency Sensitivity Analysis with Arbitrage Half-Life
+    
+    Analyzes how arbitrage returns decay with execution latency.
+    Computes the critical 'half-life' metric - time until returns hit zero.
+    
+    This is institutional-grade analysis used by elite trading firms.
+    
+    Key Insights:
+    - Returns decay exponentially with latency
+    - Half-life shows opportunity window
+    - Low half-life = high competition / low reliability
+    - High half-life = persistent inefficiency
+    """
+    
+    # Latency model: exponential decay with market microstructure factors
+    # Return(t) = base_return × e^(-λt) - degradation(t)
+    # where λ depends on: volatility, liquidity depth, path complexity
+    
+    # Calculate decay rate (lambda) based on market conditions
+    # Higher volatility → faster decay
+    # Lower liquidity → faster decay  
+    # Longer path → faster decay (more points of failure)
+    volatility_factor = request.volatility * 100  # Scale volatility impact
+    liquidity_factor = max(0.1, 1000000 / request.liquidity)  # Inverse liquidity
+    path_complexity = request.path_length / 2.0  # Normalized path complexity
+    
+    # Lambda (decay rate per ms): combines all factors
+    # Typical range: 0.001 to 0.05 per ms
+    base_lambda = 0.005  # Base decay rate
+    lambda_decay = base_lambda * (1 + volatility_factor + np.log(liquidity_factor) + path_complexity * 0.3)
+    lambda_decay = min(lambda_decay, 0.1)  # Cap at reasonable maximum
+    
+    # Additional degradation from fees and slippage accumulating over time
+    slippage_rate = 0.0001  # Slippage increases 0.01% per ms (market moving)
+    fee_total = request.fee_per_hop * request.path_length
+    
+    # Calculate returns at various latency points
+    latency_points = [0, 10, 25, 50, 75, 100, 150, 200, 300, 500, 1000]
+    decay_curve = []
+    
+    for latency_ms in latency_points:
+        # Exponential decay
+        time_seconds = latency_ms / 1000.0
+        decay_factor = np.exp(-lambda_decay * latency_ms)
+        
+        # Additional degradation from market movement
+        slippage_degradation = slippage_rate * latency_ms
+        
+        # Calculate return at this latency
+        return_at_latency = (request.base_return * decay_factor) - slippage_degradation - fee_total
+        
+        # Calculate profit/loss
+        profit_at_latency = request.initial_capital * return_at_latency
+        
+        decay_curve.append({
+            'latency_ms': latency_ms,
+            'return_pct': float(return_at_latency * 100),
+            'decay_factor': float(decay_factor),
+            'profit_usd': float(profit_at_latency),
+            'is_profitable': bool(return_at_latency > 0)
+        })
+    
+    # Calculate Half-Life: time when return = 0
+    # 0 = base_return × e^(-λt) - slippage_rate × t - fees
+    # Solve numerically
+    half_life_ms = None
+    for t in np.linspace(0, 2000, 2000):
+        decay = np.exp(-lambda_decay * t)
+        slippage = slippage_rate * t
+        return_t = (request.base_return * decay) - slippage - fee_total
+        if return_t <= 0:
+            half_life_ms = float(t)
+            break
+    
+    if half_life_ms is None:
+        half_life_ms = float('>2000')  # Opportunity lasts longer than 2 seconds
+    
+    # Key latency points for display
+    return_0ms = decay_curve[0]['return_pct']
+    return_50ms = next((p['return_pct'] for p in decay_curve if p['latency_ms'] == 50), 0)
+    return_200ms = next((p['return_pct'] for p in decay_curve if p['latency_ms'] == 200), 0)
+    
+    # Reliability classification based on half-life
+    if isinstance(half_life_ms, float):
+        if half_life_ms < 30:
+            reliability = "Very Low"
+            reliability_color = "red"
+            reliability_desc = "Extremely competitive. Requires co-location and sub-millisecond execution."
+        elif half_life_ms < 100:
+            reliability = "Low"
+            reliability_color = "orange"
+            reliability_desc = "Highly competitive. Needs optimized routing and fast execution."
+        elif half_life_ms < 300:
+            reliability = "Moderate"
+            reliability_color = "yellow"
+            reliability_desc = "Moderately competitive. Standard execution acceptable."
+        elif half_life_ms < 1000:
+            reliability = "High"
+            reliability_color = "green"
+            reliability_desc = "Persistent opportunity. Good execution window."
+        else:
+            reliability = "Very High"
+            reliability_color = "darkgreen"
+            reliability_desc = "Highly persistent inefficiency. Ample time for execution."
+    else:
+        reliability = "Extremely High"
+        reliability_color = "darkgreen"
+        reliability_desc = "Exceptionally persistent. Rare market inefficiency."
+    
+    # Calculate expected value accounting for realistic execution time
+    # Assume average execution time of 100ms for typical setup
+    typical_execution_latency = 100
+    expected_return = next((p['return_pct'] for p in decay_curve if p['latency_ms'] == typical_execution_latency), 0)
+    expected_profit = request.initial_capital * (expected_return / 100)
+    
+    # Speed requirements
+    if isinstance(half_life_ms, float) and half_life_ms < 50:
+        speed_requirement = "Ultra-High Frequency Trading (UHFT) - Microsecond latency required"
+    elif isinstance(half_life_ms, float) and half_life_ms < 200:
+        speed_requirement = "High Frequency Trading (HFT) - Sub-millisecond latency required"
+    elif isinstance(half_life_ms, float) and half_life_ms < 500:
+        speed_requirement = "Low Latency Trading - Fast execution required"
+    else:
+        speed_requirement = "Standard Execution - Normal latency acceptable"
+    
+    return {
+        "success": True,
+        "half_life_ms": half_life_ms,
+        "key_metrics": {
+            "return_at_0ms": return_0ms,
+            "return_at_50ms": return_50ms,
+            "return_at_200ms": return_200ms,
+            "base_return_pct": request.base_return * 100,
+            "decay_rate_per_ms": lambda_decay,
+            "expected_return_100ms": expected_return,
+            "expected_profit_100ms": expected_profit
+        },
+        "reliability": {
+            "level": reliability,
+            "color": reliability_color,
+            "description": reliability_desc,
+            "speed_requirement": speed_requirement
+        },
+        "decay_curve": decay_curve,
+        "parameters": {
+            "base_return": request.base_return,
+            "path_length": request.path_length,
+            "liquidity": request.liquidity,
+            "volatility": request.volatility,
+            "fee_per_hop": request.fee_per_hop,
+            "initial_capital": request.initial_capital,
+            "calculated_lambda": lambda_decay
+        },
+        "insights": {
+            "half_life_interpretation": f"Opportunity becomes unprofitable after {half_life_ms}ms" if isinstance(half_life_ms, float) else "Opportunity persists beyond 2 seconds",
+            "competitive_pressure": "High" if isinstance(half_life_ms, float) and half_life_ms < 100 else "Moderate" if isinstance(half_life_ms, float) and half_life_ms < 500 else "Low",
+            "execution_window": f"{half_life_ms}ms" if isinstance(half_life_ms, float) else ">2000ms",
+            "profitability_at_realistic_speed": "Profitable" if expected_return > 0 else "Not Profitable",
+            "return_degradation_50ms": f"{((return_0ms - return_50ms) / return_0ms * 100):.1f}%" if return_0ms > 0 else "N/A",
+            "return_degradation_200ms": f"{((return_0ms - return_200ms) / return_0ms * 100):.1f}%" if return_0ms > 0 else "N/A"
+        },
+        "timestamp": time.time()
+    }
+
+
 # ============================================================================
 # Helper Functions
 # ============================================================================
